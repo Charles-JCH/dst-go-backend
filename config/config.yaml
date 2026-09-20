@@ -1,0 +1,77 @@
+app:
+  env: "dev"  # dev | test | prod
+  name: "game-panel"
+  version: "v1.0.0"
+
+server:
+  host: "127.0.0.1"
+  port: 8080
+  mode: "debug"  # Gin 模式: debug | release | test
+  allowed_origins:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+
+log:
+  level: "info"        # 日志级别: debug | info | warn | error
+  format: "json"       # 输出格式: json | text
+  to_console: true     # 输出到控制台
+  to_file: false       # 输出到文件
+  dir: "storage/logs"  # 日志路径
+  filename: "app.log"  # 日志名称
+  max_size: 100        # 单文件最大 MB
+  max_backups: 5       # 最多保留旧文件数
+  max_age: 7           # 最多保留天数
+  compress: true       # 是否压缩旧日志
+
+mysql:
+  host: "127.0.0.1"
+  port: 3306
+  user: root
+  password: 123456
+  database: game_panel
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: "1h"
+  conn_max_idle_time: "30m"
+  log_level: "info"  # silent | error | warn | info
+
+sqlite:
+  db_path: "storage/data/app.db"
+  max_open_conns: 10
+  max_idle_conns: 10
+  conn_max_lifetime: "1h"
+  conn_max_idle_time: "30m"
+  log_level: "info"  # silent | error | warn | info
+
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 20
+  dial_timeout: "5s"   # 连接超时时间
+  read_timeout: "3s"   # 读取超时时间
+  write_timeout: "3s"  # 写入超时时间
+
+jwt:
+  access_secret: "access-secret-app"
+  access_expire: "15m"  # AccessToken 过期时间 (15分钟)
+  refresh_secret: "refresh-secret-app"
+  refresh_expire: "168h"  # RefreshToken 过期时间 (7天)
+  issuer: "app"
+
+captcha:
+  expire: "5m"
+  length: 6
+  img_width: 240
+  img_height: 80
+  max_skew: 0.7
+  dot_count: 50
+
+sms:
+  provider: "mock" # mock | aliyun
+  aliyun:
+    access_key_id: "aliyun-access-key"
+    access_key_secret: "aliyun-access-key-secret"
+    sign_name: "Charles"
+    template_code: "SMS_123456"
