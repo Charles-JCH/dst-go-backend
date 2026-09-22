@@ -188,15 +188,15 @@ func (s *authService) Login(ctx context.Context, req *request.LoginReq) (respons
 	}
 
 	// 查询用户
-	user, err := s.userRepo.GetByUsername(ctx, req.Username)
+	user, err := s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询用户失败", "用户名", req.Username, "错误", err)
+		slog.ErrorContext(ctx, "查询用户失败", "手机号", req.Phone, "错误", err)
 		return response.LoginResp{}, "", apperr.NewBizError(500, "用户登录失败")
 	}
 
 	// 校验密码
 	if user == nil || !s.hasher.ComparePassword(user.Password, req.Password) {
-		return response.LoginResp{}, "", apperr.NewBizError(401, "用户名或密码错误")
+		return response.LoginResp{}, "", apperr.NewBizError(401, "手机号或密码错误")
 	}
 
 	// 校验账号状态

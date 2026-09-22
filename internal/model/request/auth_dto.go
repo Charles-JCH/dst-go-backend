@@ -14,7 +14,7 @@ type RegisterReq struct {
 }
 
 type LoginReq struct {
-	Username    string `json:"username" binding:"required"`
+	Phone       string `json:"phone" binding:"required"`
 	Password    string `json:"password" binding:"required,ascii,max=72"`
 	CaptchaId   string `json:"captchaId" binding:"required"`
 	CaptchaCode string `json:"captchaCode" binding:"required"`

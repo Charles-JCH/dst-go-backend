@@ -72,7 +72,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// Login 账号密码登录
+// Login 密码登录
 // [POST] /api/v1/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req request.LoginReq

@@ -12,6 +12,7 @@ type UserRepository interface {
 	GetById(ctx context.Context, userId uint64) (*entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
 	GetByPhone(ctx context.Context, phone string) (*entity.User, error)
+	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	Update(ctx context.Context, userId uint64, username string) error
 	UpdatePassword(ctx context.Context, userId uint64, passwordHash string) error
 }
@@ -63,6 +64,19 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*e
 func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
 	var user entity.User
 	err := r.getDB(ctx).Where("phone = ?", phone).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByEmail 根据邮箱查询
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+	var user entity.User
+	err := r.getDB(ctx).Where("email = ?", email).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
