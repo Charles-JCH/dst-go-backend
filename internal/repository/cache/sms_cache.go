@@ -11,7 +11,7 @@ import (
 const smsCodePrefix = "sms_code:"
 
 var ErrSMSCodeAttemptsExceeded = errors.New(
-	"验证码错误次数已达上限，请重新发送",
+	"短信验证码错误次数已达上限",
 )
 
 type SMSCache interface {
@@ -57,13 +57,13 @@ return 0
 
 func (c *smsCache) SetCode(ctx context.Context, phone, code string, ttl time.Duration) error {
 	if ttl.Milliseconds() <= 0 {
-		return fmt.Errorf("验证码有效期必须至少为一毫秒")
+		return fmt.Errorf("短信验证码有效期须至少为 1 毫秒")
 	}
 
 	key := smsCodePrefix + phone
 	err := setCodeLua.Run(ctx, c.client, []string{key}, code, ttl.Milliseconds()).Err()
 	if err != nil {
-		return fmt.Errorf("保存短信验证码失败: %w", err)
+		return fmt.Errorf("短信验证码保存失败: %w", err)
 	}
 	return nil
 }
@@ -72,7 +72,7 @@ func (c *smsCache) ConsumeCode(ctx context.Context, phone string, code string) (
 	key := smsCodePrefix + phone
 	result, err := consumeCodeLua.Run(ctx, c.client, []string{key}, code).Int64()
 	if err != nil {
-		return false, fmt.Errorf("消费短信验证码失败: %w", err)
+		return false, fmt.Errorf("短信验证码消费失败: %w", err)
 	}
 	if result == -1 {
 		return false, ErrSMSCodeAttemptsExceeded

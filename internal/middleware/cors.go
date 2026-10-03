@@ -10,7 +10,7 @@ import (
 func CORS(allowedOrigins []string) gin.HandlerFunc {
 	allowed := make(map[string]struct{}, len(allowedOrigins))
 	for _, origin := range allowedOrigins {
-		if origin != "" && origin != "*" && origin != "null" {
+		if origin != "" {
 			allowed[origin] = struct{}{}
 		}
 	}
@@ -22,18 +22,18 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			return
 		}
 		if _, ok := allowed[origin]; !ok {
-			result.FailWithMsg(c, http.StatusForbidden, "请求来源不受信任")
+			result.FailWithMsg(c, 403, "请求来源不受信任")
 			c.Abort()
 			return
 		}
 
 		c.Header("Access-Control-Allow-Origin", origin)
 		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Expose-Headers", "X-Trace-Id")
+		c.Header("Access-Control-Expose-Headers", "X-Trace-ID")
 
 		if c.Request.Method == http.MethodOptions && c.GetHeader("Access-Control-Request-Method") != "" {
 			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token, X-Trace-Id")
+			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-CSRF-Token, X-Trace-ID")
 			c.Header("Access-Control-Max-Age", "600")
 			c.AbortWithStatus(http.StatusNoContent)
 			return

@@ -40,7 +40,7 @@ func NewLogger(cfg *Config) (*slog.Logger, error) {
 	// 文件输出
 	if cfg.ToFile && cfg.Filename != "" {
 		if err := os.MkdirAll(cfg.Dir, os.ModePerm); err != nil {
-			return nil, fmt.Errorf("创建日志目录失败 [%s]: %w", cfg.Dir, err)
+			return nil, fmt.Errorf("日志目录创建失败 path=%q: %w", cfg.Dir, err)
 		}
 		logFilePath := filepath.Join(cfg.Dir, cfg.Filename)
 		// 配置 lumberjack 日志切割

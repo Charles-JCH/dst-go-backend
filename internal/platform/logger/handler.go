@@ -14,10 +14,10 @@ func NewTraceHandler(handler slog.Handler) slog.Handler {
 	return &TraceHandler{Handler: handler}
 }
 
-// Handle 拦截日志记录并追加 traceId
+// Handle 拦截日志记录并追加 traceID
 func (h *TraceHandler) Handle(ctx context.Context, r slog.Record) error {
-	if traceId := GetTraceId(ctx); traceId != "" {
-		r.AddAttrs(slog.String("traceId", traceId))
+	if traceID := GetTraceID(ctx); traceID != "" {
+		r.AddAttrs(slog.String("traceID", traceID))
 	}
 	return h.Handler.Handle(ctx, r)
 }

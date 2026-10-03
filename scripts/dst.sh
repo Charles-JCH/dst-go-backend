@@ -25,8 +25,16 @@ readonly DST_KLEI_DIR="$HOME/.klei/DoNotStarveTogether"
 
 readonly GIT_REPO_URL="https://gitee.com/Charles-JCH/dst-archive.git"
 readonly DST_TOKEN="${DST_TOKEN:-pds-g^KU_XKeqpZXq^rtM08d2qtiy34ZRzi1P2wTLmrzTK3AcmnnMRePnXDjo=}"
-readonly DST_MASTER_PORT="${DST_MASTER_PORT:-10999}"
-readonly DST_CAVE_PORT="${DST_CAVE_PORT:-10998}"
+
+readonly DST_MASTER_PORT=10999
+readonly DST_CAVE_PORT=10998
+readonly DST_SLOT_COUNT=5
+readonly DST_PORT_STEP=10
+readonly DST_SHARD_PORT=10888
+readonly DST_MASTER_STEAM_PORT=27018
+readonly DST_MASTER_AUTH_PORT=8768
+readonly DST_CAVE_STEAM_PORT=27017
+readonly DST_CAVE_AUTH_PORT=8767
 
 readonly SCRIPT_UPDATE_URL="https://gitee.com/Charles-JCH/dst/raw/master/dst.sh"
 
@@ -38,8 +46,8 @@ readonly C_GREEN="\033[1;32m"
 readonly C_YELLOW="\033[1;33m"
 readonly C_RESET="\033[0m"
 
-info()  { printf "${C_GREEN}[%s] [INFO ]${C_RESET} %s\n" "$(date '+%F %T')" "$*"; }
-warn()  { printf "${C_YELLOW}[%s] [WARN ]${C_RESET} %s\n" "$(date '+%F %T')" "$*"; }
+info()  { printf "${C_GREEN}[%s] [INFO]${C_RESET} %s\n" "$(date '+%F %T')" "$*"; }
+warn()  { printf "${C_YELLOW}[%s] [WARN]${C_RESET} %s\n" "$(date '+%F %T')" "$*"; }
 error() { printf "${C_RED}[%s] [ERROR]${C_RESET} %s\n" "$(date '+%F %T')" "$*" >&2; }
 die()   { error "$*"; exit 1; }
 
@@ -179,7 +187,7 @@ bootstrap_user() {
     # 切换 charles 用户执行脚本
     info "切换用户 $CHARLES_USER 重新执行..."
     # sudo -E 保留后端传入的环境变量
-    exec sudo -E -u "$CHARLES_USER" bash "$target_script" "$@"
+    exec sudo -H -E -u "$CHARLES_USER" bash "$target_script" "$@"
 }
 
 # ============================================================
@@ -188,8 +196,25 @@ bootstrap_user() {
 configure_firewall() {
     info "检查防火墙配置..."
 
+    info "配置 1～${DST_SLOT_COUNT} 槽位的防火墙端口..."
+
+    local slot offset base port
+    local bases=(
+        "$DST_MASTER_PORT"
+        "$DST_CAVE_PORT"
+        "$DST_MASTER_STEAM_PORT"
+        "$DST_MASTER_AUTH_PORT"
+        "$DST_CAVE_STEAM_PORT"
+        "$DST_CAVE_AUTH_PORT"
+    )
+
     if ! command -v ufw &>/dev/null; then
-        warn "未检测到 ufw，请手动开放 UDP 端口: $DST_MASTER_PORT, $DST_CAVE_PORT"
+        for ((slot = 1; slot <= DST_SLOT_COUNT; slot++)); do
+            offset=$(( (slot - 1) * DST_PORT_STEP ))
+            for base in "${bases[@]}"; do
+                warn "未检测到 ufw，请手动开放槽位 ${slot} UDP 端口: $((base + offset))"
+            done
+        done
         return 0
     fi
 
@@ -200,15 +225,18 @@ configure_firewall() {
     sudo ufw allow 22/tcp >/dev/null
     info "已放行端口 22/tcp"
 
-    # 放行地面（Master）UDP 端口
-    sudo ufw allow "$DST_MASTER_PORT/udp" >/dev/null
-    info "已放行地面（Master）UDP 端口: $DST_MASTER_PORT/udp"
+    for ((slot = 1; slot <= DST_SLOT_COUNT; slot++)); do
+        offset=$(( (slot - 1) * DST_PORT_STEP ))
 
-    # 放行洞穴（Cave）UDP 端口
-    sudo ufw allow "$DST_CAVE_PORT/udp" >/dev/null
-    info "已放行洞穴（Cave）UDP 端口: $DST_CAVE_PORT/udp"
+        for base in "${bases[@]}"; do
+            port=$((base + offset))
+            sudo ufw allow "$port/udp" >/dev/null
+        done
 
-    info "配置完成！"
+        info "槽位 ${slot} UDP 端口已放行"
+    done
+
+    info "防火墙配置完成！"
 }
 
 # ============================================================
@@ -308,15 +336,21 @@ fix_dst_libs() {
     # 兼容 32 位服务端路径
     mkdir -p "$DST_ROOT/bin/lib32"
     if [[ -f "$DST_ROOT/steamclient.so" ]]; then
-        cp -f "$DST_ROOT/steamclient.so" "$DST_ROOT/bin/lib32/" || true
-        info "已修复 32 位 Steam 依赖库"
+        if cp -f "$DST_ROOT/steamclient.so" "$DST_ROOT/bin/lib32/"; then
+            info "已修复 32 位 Steam 依赖库"
+        else
+            warn "复制 32 位 Steam 依赖库失败，模组下载可能失败"
+        fi
     fi
 
     # 兼容64 位服务端路径
     mkdir -p "$DST_ROOT/bin64/lib64"
     if [[ -f "$DST_ROOT/linux64/steamclient.so" ]]; then
-        cp -f "$DST_ROOT/linux64/steamclient.so" "$DST_ROOT/bin64/lib64/" || true
-        info "已修复 64 位 Steam 依赖库"
+        if cp -f "$DST_ROOT/linux64/steamclient.so" "$DST_ROOT/bin64/lib64/"; then
+            info "已修复 64 位 Steam 依赖库"
+        else
+            warn "复制 64 位 Steam 依赖库失败，模组下载可能失败"
+        fi
     fi
 }
 
@@ -325,7 +359,12 @@ fix_dst_libs() {
 # ============================================================
 install_env() {
     # 已部署则跳过
-    [[ -f "$DST_BIN" ]] && return 0
+    local deploy_marker="$DST_ROOT/.deploy_complete"
+    if [[ -f "$deploy_marker" && -f "$DST_BIN" ]]; then
+        info "环境已部署完成，无需重复部署"
+        return 0
+    fi
+    rm -f "$deploy_marker"
 
     local deploy_log="$HOME/deploy.log"
 
@@ -372,6 +411,7 @@ EOF
     info "[3/3] 下载/更新 DST 服务端..."
     update_dst_with_retry
 
+    touch "$deploy_marker"
     info "环境部署完成！"
 
     exec 1>&3 2>&4
@@ -434,6 +474,49 @@ wait_for_startup() {
     fi
 }
 
+# 设置配置文件端口
+set_ini_port() {
+    local file="$1"
+    local key="$2"
+    local port="$3"
+
+    [[ -f "$file" ]] || die "配置文件不存在: $file"
+
+    if ! grep -Eq "^[[:space:]]*${key}[[:space:]]*=" "$file"; then
+        die "配置文件缺少端口设置 ${key}: $file"
+    fi
+
+    sed -i -E \
+        "s/^[[:space:]]*${key}[[:space:]]*=.*$/${key} = ${port}/" \
+        "$file"
+}
+
+# 配置多存档端口
+configure_cluster_ports() {
+    local slot="$1"
+    local cluster_dir="$DST_KLEI_DIR/Cluster_${slot}"
+    local offset=$(( (slot - 1) * DST_PORT_STEP ))
+
+    set_ini_port "$cluster_dir/cluster.ini" \
+        master_port "$((DST_SHARD_PORT + offset))"
+
+    set_ini_port "$cluster_dir/Master/server.ini" \
+        server_port "$((DST_MASTER_PORT + offset))"
+    set_ini_port "$cluster_dir/Master/server.ini" \
+        master_server_port "$((DST_MASTER_STEAM_PORT + offset))"
+    set_ini_port "$cluster_dir/Master/server.ini" \
+        authentication_port "$((DST_MASTER_AUTH_PORT + offset))"
+
+    set_ini_port "$cluster_dir/Caves/server.ini" \
+        server_port "$((DST_CAVE_PORT + offset))"
+    set_ini_port "$cluster_dir/Caves/server.ini" \
+        master_server_port "$((DST_CAVE_STEAM_PORT + offset))"
+    set_ini_port "$cluster_dir/Caves/server.ini" \
+        authentication_port "$((DST_CAVE_AUTH_PORT + offset))"
+
+    info "Cluster_${slot} 端口配置完成: 地面 $((DST_MASTER_PORT + offset))，洞穴 $((DST_CAVE_PORT + offset))，分片 $((DST_SHARD_PORT + offset))"
+}
+
 # ============================================================
 # 初始化 / 启动 / 停止 / 更新 / 删除 / 查看运行状态
 # ============================================================
@@ -442,6 +525,11 @@ wait_for_startup() {
 init_cluster() {
     local slot="${1:-1}"
     local token="${2:-$DST_TOKEN}"
+
+    [[ "$slot" =~ ^[1-5]$ ]] || die "存档槽位只能是 1～5"
+    if is_running "master${slot}" || is_running "caves${slot}"; then
+        die "Cluster_${slot} 正在运行，请先停止后再初始化"
+    fi
     local cluster_dir="$DST_KLEI_DIR/Cluster_${slot}"
 
     if [[ ! -d "$cluster_dir" ]]; then
@@ -458,6 +546,8 @@ init_cluster() {
         rm -rf "$cluster_dir/Master/save"
         rm -rf "$cluster_dir/Caves/save"
     fi
+
+    configure_cluster_ports "$slot"
 
     info "写入 Cluster Token"
     echo "$token" > "$cluster_dir/cluster_token.txt"
@@ -490,7 +580,7 @@ start_server() {
 
     # 启动 Master
     info "启动 Master${slot}..."
-    screen -dmS "master${slot}" bash -c "$DST_BIN -console -cluster Cluster_${slot} -shard Master | sed --unbuffered 's/^/Master: /' > ${log_file} 2>&1"
+    screen -dmS "master${slot}" bash -c "$DST_BIN -console -cluster Cluster_${slot} -shard Master 2>&1 | sed --unbuffered 's/^/Master: /' > ${log_file}"
 
     # 预热等待
     info "等待 Master 预热(15s)..."
@@ -504,7 +594,7 @@ start_server() {
 
     # 启动 Caves
     info "启动 Caves${slot}..."
-    screen -dmS "caves${slot}" bash -c "$DST_BIN -console -cluster Cluster_${slot} -shard Caves | sed --unbuffered 's/^/Caves: /' >> ${log_file} 2>&1"
+    screen -dmS "caves${slot}" bash -c "$DST_BIN -console -cluster Cluster_${slot} -shard Caves 2>&1 | sed --unbuffered 's/^/Caves: /' >> ${log_file}"
 
     info "正在验证 Caves 进程状态..."
     sleep 3
@@ -587,7 +677,7 @@ update_server() {
     if ! [[ "$remote_build_id" =~ ^[0-9]+$ && "$remote_build_id" != "0" ]]; then
         if screen -list | grep -q "master"; then
             warn "获取最新版本信息失败，且检测到游戏正在运行。请先停止所有服务器再执行强制更新/校验"
-            return 0
+            return 1
         fi
 
         warn "获取 Steam 最新版本信息失败，将执行强制更新..."
@@ -602,7 +692,7 @@ update_server() {
     else
         if screen -list | grep -q "master"; then
             warn "发现新版本 (本地: ${local_build_id} -> 最新: ${remote_build_id})，请先停止所有运行中的服务器再执行更新"
-            return 0
+            return 1
         fi
 
         info "开始下载更新..."
@@ -660,18 +750,22 @@ check_status() {
     if [[ $master_up -eq 1 ]] && [[ $caves_up -eq 1 ]]; then
         info "存档 Cluster_${slot} 状态: 地面 [运行中]，洞穴 [运行中]"
         echo "RUNNING"
+        return 0
     
     elif [[ $master_up -eq 1 ]] && [[ $caves_up -eq 0 ]]; then
         warn "存档 Cluster_${slot} 状态: 地面 [运行中]，洞穴 [已停止]"
         echo "RUNNING"
+        return 0
     
     elif [[ $master_up -eq 0 ]] && [[ $caves_up -eq 1 ]]; then
         warn "存档 Cluster_${slot} 状态: 地面 [已停止]，洞穴 [运行中]"
         echo "STOPPED"
+        return 2
     
     else
         info "存档 Cluster_${slot} 状态: 地面 [已停止]，洞穴 [已停止]"
         echo "STOPPED"
+        return 2
     fi
 }
 
@@ -699,7 +793,7 @@ show_menu() {
         3) stop_server   ;;
         4) update_server ;;
         5) delete_server ;;
-        6) check_status  ;;
+        6) check_status || true ;;
         7) exit 0 ;;
         *) warn "无效选项，请重新输入" ;;
     esac

@@ -18,9 +18,9 @@ func Recovery() gin.HandlerFunc {
 				// 打印堆栈信息
 				slog.ErrorContext(
 					c.Request.Context(),
-					"系统异常崩溃",
-					slog.Any("错误信息", err),
-					slog.String("堆栈信息", stack),
+					"请求处理异常",
+					slog.Any("error", err),
+					slog.String("stack", stack),
 				)
 
 				// 返回统一格式的系统错误信息

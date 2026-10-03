@@ -1,19 +1,19 @@
 package response
 
 type Identity struct {
-	UserId   uint64
+	UserID   uint64
 	Username string
 	Role     string
 }
 
 type GetCaptchaResp struct {
-	CaptchaId  string `json:"captchaId"`
+	CaptchaID  string `json:"captchaID"`
 	CaptchaImg string `json:"captchaImg"`
 }
 
 type LoginResp struct {
 	AccessToken string `json:"accessToken"`
-	UserId      uint64 `json:"userId"`
+	UserID      uint64 `json:"userID"`
 	Username    string `json:"username"`
 	Role        string `json:"role"`
 }

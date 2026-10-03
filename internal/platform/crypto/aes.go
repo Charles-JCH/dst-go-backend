@@ -22,7 +22,7 @@ type aesGCMEncryptor struct {
 func NewAESEncryptor(key string) (Encryptor, error) {
 	k := []byte(key)
 	if len(k) != 16 && len(k) != 24 && len(k) != 32 {
-		return nil, errors.New("AES 密钥长度必须为 16、24 或 32 字节")
+		return nil, errors.New("aes 密钥长度须为 16、24 或 32 字节")
 	}
 	return &aesGCMEncryptor{key: k}, nil
 }
@@ -65,7 +65,7 @@ func (a *aesGCMEncryptor) Decrypt(cipherHex string) (string, error) {
 
 	nonceSize := gcm.NonceSize()
 	if len(data) < nonceSize {
-		return "", errors.New("密文数据长度不足")
+		return "", errors.New("密文长度不足")
 	}
 
 	nonce, ciphertext := data[:nonceSize], data[nonceSize:]

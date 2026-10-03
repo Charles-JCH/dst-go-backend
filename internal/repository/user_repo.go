@@ -9,12 +9,12 @@ import (
 
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
-	GetById(ctx context.Context, userId uint64) (*entity.User, error)
+	GetByID(ctx context.Context, userID uint64) (*entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
 	GetByPhone(ctx context.Context, phone string) (*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	Update(ctx context.Context, userId uint64, username string) error
-	UpdatePassword(ctx context.Context, userId uint64, passwordHash string) error
+	Update(ctx context.Context, userID uint64, username string) error
+	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) (bool, error)
 }
 
 type userRepository struct {
@@ -34,10 +34,10 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	return r.getDB(ctx).Create(user).Error
 }
 
-// GetById 根据用户 Id 查询
-func (r *userRepository) GetById(ctx context.Context, userId uint64) (*entity.User, error) {
+// GetByID 根据用户 ID 查询
+func (r *userRepository) GetByID(ctx context.Context, userID uint64) (*entity.User, error) {
 	var user entity.User
-	err := r.getDB(ctx).Where("id = ?", userId).First(&user).Error
+	err := r.getDB(ctx).Where("id = ?", userID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -87,10 +87,10 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 }
 
 // Update 更新用户名
-func (r *userRepository) Update(ctx context.Context, userId uint64, username string) error {
+func (r *userRepository) Update(ctx context.Context, userID uint64, username string) error {
 	result := r.getDB(ctx).
 		Model(&entity.User{}).
-		Where("id = ?", userId).
+		Where("id = ?", userID).
 		Update("username", username)
 	if result.Error != nil {
 		return result.Error
@@ -102,19 +102,16 @@ func (r *userRepository) Update(ctx context.Context, userId uint64, username str
 }
 
 // UpdatePassword 更新用户密码并递增令牌版本
-func (r *userRepository) UpdatePassword(ctx context.Context, userId uint64, passwordHash string) error {
+func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) (bool, error) {
 	result := r.getDB(ctx).
 		Model(&entity.User{}).
-		Where("id = ?", userId).
+		Where("id = ? AND token_version = ?", userID, tokenVersion).
 		Updates(map[string]any{
 			"password":      passwordHash,
 			"token_version": gorm.Expr("token_version + 1"),
 		})
 	if result.Error != nil {
-		return result.Error
+		return false, result.Error
 	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	return result.RowsAffected == 1, nil
 }

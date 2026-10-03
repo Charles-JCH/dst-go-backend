@@ -21,7 +21,7 @@ func InitSQLite(cfg config.SQLiteConfig) (*gorm.DB, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("SQLite 初始化失败: %w", err)
+		return nil, fmt.Errorf("sqlite 初始化失败: %w", err)
 	}
 
 	// 自动迁移
@@ -31,10 +31,10 @@ func InitSQLite(cfg config.SQLiteConfig) (*gorm.DB, error) {
 	if err != nil {
 		if sqlDB, dbErr := db.DB(); dbErr == nil {
 			if closeErr := sqlDB.Close(); closeErr != nil {
-				slog.Error("迁移失败后关闭数据库失败", "错误", closeErr)
+				slog.Error("迁移失败后数据库关闭失败", "error", closeErr)
 			}
 		}
-		return nil, fmt.Errorf("数据库自动迁移失败: %w", err)
+		return nil, fmt.Errorf("数据库迁移失败: %w", err)
 	}
 
 	return db, nil
@@ -55,7 +55,7 @@ func InitMySQL(cfg *database.MySQLConfig) (*gorm.DB, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("MySQL 初始化失败: %w", err)
+		return nil, fmt.Errorf("mysql 初始化失败: %w", err)
 	}
 
 	// 自动迁移
@@ -65,10 +65,10 @@ func InitMySQL(cfg *database.MySQLConfig) (*gorm.DB, error) {
 	if err != nil {
 		if sqlDB, dbErr := db.DB(); dbErr == nil {
 			if closeErr := sqlDB.Close(); closeErr != nil {
-				slog.Error("迁移失败后关闭数据库失败", "错误", closeErr)
+				slog.Error("迁移失败后数据库关闭失败", "error", closeErr)
 			}
 		}
-		return nil, fmt.Errorf("数据库自动迁移失败: %w", err)
+		return nil, fmt.Errorf("数据库迁移失败: %w", err)
 	}
 
 	return db, nil

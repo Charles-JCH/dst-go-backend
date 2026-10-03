@@ -1,13 +1,10 @@
 package v1
 
 import (
-	"errors"
-	"game-panel/internal/apperr"
 	"game-panel/internal/model/request"
 	"game-panel/internal/result"
 	"game-panel/internal/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -20,12 +17,14 @@ const (
 type AuthHandler struct {
 	authService   service.AuthService
 	refreshExpire time.Duration
+	cookieSecure  bool
 }
 
-func NewAuthHandler(authService service.AuthService, refreshExpire time.Duration) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, refreshExpire time.Duration, cookieSecure bool) *AuthHandler {
 	return &AuthHandler{
 		authService:   authService,
 		refreshExpire: refreshExpire,
+		cookieSecure:  cookieSecure,
 	}
 }
 
@@ -45,7 +44,7 @@ func (h *AuthHandler) GetCaptcha(c *gin.Context) {
 func (h *AuthHandler) SendSMSCode(c *gin.Context) {
 	var req request.SendSMSCodeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	if err := h.authService.SendSMSCode(c.Request.Context(), c.ClientIP(), &req); err != nil {
@@ -60,7 +59,7 @@ func (h *AuthHandler) SendSMSCode(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req request.RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	resp, refreshToken, err := h.authService.Register(c.Request.Context(), &req)
@@ -77,7 +76,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req request.LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	resp, refreshToken, err := h.authService.Login(c.Request.Context(), &req)
@@ -94,7 +93,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) LoginBySMS(c *gin.Context) {
 	var req request.LoginBySMSReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	resp, refreshToken, err := h.authService.LoginBySMS(c.Request.Context(), &req)
@@ -111,15 +110,11 @@ func (h *AuthHandler) LoginBySMS(c *gin.Context) {
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	refreshToken, err := c.Cookie(RefreshTokenCookieName)
 	if err != nil || refreshToken == "" {
-		result.FailWithMsg(c, 401, "未找到有效的刷新凭证")
+		result.FailWithMsg(c, 401, "刷新凭证缺失")
 		return
 	}
 	newAccessToken, newRefreshToken, err := h.authService.RefreshToken(c.Request.Context(), refreshToken)
 	if err != nil {
-		var bizErr *apperr.BizError
-		if errors.As(err, &bizErr) && (bizErr.Code == http.StatusUnauthorized || bizErr.Code == http.StatusForbidden) {
-			h.clearRefreshTokenCookie(c)
-		}
 		result.Fail(c, err)
 		return
 	}
@@ -134,7 +129,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	parts := strings.Fields(c.GetHeader("Authorization"))
 	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		result.FailWithMsg(c, 400, "退出登录需要携带 Authorization: Bearer <accessToken>")
+		result.FailWithMsg(c, 400, "登录凭证缺失或格式错误")
 		return
 	}
 	accessToken := parts[1]
@@ -156,7 +151,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) VerifyResetCode(c *gin.Context) {
 	var req request.VerifyResetCodeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	resetToken, err := h.authService.VerifyResetCode(c.Request.Context(), &req)
@@ -174,7 +169,7 @@ func (h *AuthHandler) VerifyResetCode(c *gin.Context) {
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req request.ResetPasswordReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		result.FailWithMsg(c, 400, "请求参数不合法")
+		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
 	if err := h.authService.ResetPassword(c.Request.Context(), &req); err != nil {
@@ -187,17 +182,17 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 // GetProfile 获取当前登录用户的信息
 // [GET] /api/v1/auth/profile
 func (h *AuthHandler) GetProfile(c *gin.Context) {
-	userIdVal, exists := c.Get("userId")
+	userIDVal, exists := c.Get("userID")
 	if !exists {
-		result.FailWithMsg(c, 401, "未授权的访问")
+		result.FailWithMsg(c, 401, "未授权")
 		return
 	}
-	userId, ok := userIdVal.(uint64)
+	userID, ok := userIDVal.(uint64)
 	if !ok {
 		result.FailWithMsg(c, 401, "用户标识无效")
 		return
 	}
-	user, err := h.authService.GetProfile(c.Request.Context(), userId)
+	user, err := h.authService.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		result.Fail(c, err)
 		return
@@ -213,7 +208,7 @@ func (h *AuthHandler) setRefreshTokenCookie(c *gin.Context, refreshToken string)
 		int(h.refreshExpire/time.Second),
 		RefreshTokenCookiePath,
 		"",
-		false,
+		h.cookieSecure,
 		true,
 	)
 }
@@ -226,7 +221,7 @@ func (h *AuthHandler) clearRefreshTokenCookie(c *gin.Context) {
 		-1,
 		RefreshTokenCookiePath,
 		"",
-		false,
+		h.cookieSecure,
 		true,
 	)
 }

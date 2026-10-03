@@ -1,6 +1,7 @@
 package captcha
 
 import (
+	"context"
 	"github.com/mojocn/base64Captcha"
 	"github.com/redis/go-redis/v9"
 	"time"
@@ -17,12 +18,12 @@ type Config struct {
 
 type Captcha interface {
 	Generate() (id string, b64s string, err error)
-	Verify(id string, answer string, clear bool) bool
+	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
 }
 
 type captcha struct {
 	driver *base64Captcha.DriverDigit
-	store  base64Captcha.Store
+	store  *RedisStore
 }
 
 func NewCaptcha(cfg Config, rdb *redis.Client) Captcha {
@@ -51,6 +52,10 @@ func (c *captcha) Generate() (id string, b64s string, err error) {
 }
 
 // Verify 校验验证码
-func (c *captcha) Verify(id string, answer string, clear bool) bool {
-	return c.store.Verify(id, answer, clear)
+func (c *captcha) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
+	value, err := c.store.GetWithContext(ctx, id, clear)
+	if err != nil {
+		return false, err
+	}
+	return value != "" && value == answer, nil
 }

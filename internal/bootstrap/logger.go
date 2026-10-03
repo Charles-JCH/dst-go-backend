@@ -24,7 +24,7 @@ func InitLogger(cfg config.LogConfig, env string) (*slog.Logger, error) {
 		AddSource:  addSource,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("初始化日志失败: %w", err)
+		return nil, fmt.Errorf("日志初始化失败: %w", err)
 	}
 
 	slog.SetDefault(l)

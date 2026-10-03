@@ -22,7 +22,7 @@ type SQLiteConfig struct {
 func NewSQLite(cfg *SQLiteConfig) (*gorm.DB, error) {
 	dir := filepath.Dir(cfg.DBPath)
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("创建数据库存储目录失败 [%s]: %w", dir, err)
+		return nil, fmt.Errorf("数据库目录创建失败 path=%q: %w", dir, err)
 	}
 
 	// 开启 WAL 模式
@@ -32,16 +32,17 @@ func NewSQLite(cfg *SQLiteConfig) (*gorm.DB, error) {
 
 	// 打开 SQLite 连接
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger: gormLogger,
+		Logger:         gormLogger,
+		TranslateError: true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("打开 SQLite 数据库连接失败: %w", err)
+		return nil, fmt.Errorf("sqlite 数据库打开失败: %w", err)
 	}
 
 	// 获取底层 sql.DB
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("获取底层的 sql.DB 失败: %w", err)
+		return nil, fmt.Errorf("数据库连接池获取失败: %w", err)
 	}
 
 	// 连接池配置

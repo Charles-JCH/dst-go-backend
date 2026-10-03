@@ -2,10 +2,10 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"strconv"
 	"time"
 )
 
@@ -14,6 +14,11 @@ const (
 	resetTokenPrefix     = "reset_token:"
 )
 
+type ResetTokenData struct {
+	UserID       uint64 `json:"userID"`
+	TokenVersion uint64 `json:"tokenVersion"`
+}
+
 type AuthCache interface {
 	// 黑名单
 	AddTokenToBlacklist(ctx context.Context, token string, ttl time.Duration) error
@@ -21,8 +26,9 @@ type AuthCache interface {
 	ConsumeRefreshToken(ctx context.Context, token string, ttl time.Duration) (bool, error)
 
 	// 重置密码
-	SetResetToken(ctx context.Context, token string, userId uint64, ttl time.Duration) error
-	ConsumeResetToken(ctx context.Context, token string) (userId uint64, err error)
+	SetResetToken(ctx context.Context, token string, userID uint64, tokenVersion uint64, ttl time.Duration) error
+	GetResetToken(ctx context.Context, token string) (*ResetTokenData, error)
+	DelResetToken(ctx context.Context, token string) error
 }
 
 type authCache struct {
@@ -46,39 +52,58 @@ func (c *authCache) IsTokenInBlacklist(ctx context.Context, token string) (bool,
 
 func (c *authCache) ConsumeRefreshToken(ctx context.Context, token string, ttl time.Duration) (bool, error) {
 	if token == "" {
-		return false, errors.New("refreshToken 不能为空")
+		return false, errors.New("刷新凭证为空")
 	}
 	if ttl <= 0 {
-		return false, errors.New("refreshToken 剩余有效期必须大于 0")
+		return false, errors.New("刷新凭证已过期")
 	}
 
 	key := tokenBlacklistPrefix + token
 
 	consumed, err := c.client.SetNX(ctx, key, "1", ttl).Result()
 	if err != nil {
-		return false, fmt.Errorf("消费 refreshToken 失败: %w", err)
+		return false, fmt.Errorf("刷新凭证消费失败: %w", err)
 	}
 
 	return consumed, nil
 }
 
-func (c *authCache) SetResetToken(ctx context.Context, token string, userId uint64, ttl time.Duration) error {
+func (c *authCache) SetResetToken(ctx context.Context, token string, userID uint64, tokenVersion uint64, ttl time.Duration) error {
+	data, err := json.Marshal(ResetTokenData{
+		UserID:       userID,
+		TokenVersion: tokenVersion,
+	})
+	if err != nil {
+		return fmt.Errorf("密码重置凭证序列化失败: %w", err)
+	}
+
 	key := resetTokenPrefix + token
-	return c.client.Set(ctx, key, userId, ttl).Err()
+	return c.client.Set(ctx, key, string(data), ttl).Err()
 }
 
-func (c *authCache) ConsumeResetToken(ctx context.Context, token string) (userId uint64, err error) {
+func (c *authCache) GetResetToken(ctx context.Context, token string) (*ResetTokenData, error) {
 	key := resetTokenPrefix + token
-	val, err := c.client.GetDel(ctx, key).Result()
+
+	val, err := c.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
-		return 0, nil
+		return nil, nil
 	}
 	if err != nil {
-		return 0, err
+		return nil, fmt.Errorf("密码重置凭证读取失败: %w", err)
 	}
-	userId, err = strconv.ParseUint(val, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("解析用户ID失败: %w", err)
+
+	var data ResetTokenData
+	if err := json.Unmarshal([]byte(val), &data); err != nil {
+		return nil, err
 	}
-	return userId, nil
+
+	return &data, nil
+}
+
+func (c *authCache) DelResetToken(
+	ctx context.Context,
+	token string,
+) error {
+	key := resetTokenPrefix + token
+	return c.client.Del(ctx, key).Err()
 }

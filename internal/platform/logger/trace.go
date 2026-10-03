@@ -4,22 +4,22 @@ import "context"
 
 type contextKey string
 
-const traceIdKey contextKey = "trace_id"
+const traceIDKey contextKey = "trace_id"
 
-const TraceHeaderKey = "X-Trace-Id"
+const TraceHeaderKey = "X-Trace-ID"
 
-// WithTraceId 将 traceId 注入 Context
-func WithTraceId(ctx context.Context, traceId string) context.Context {
-	return context.WithValue(ctx, traceIdKey, traceId)
+// WithTraceID 将 traceID 注入 Context
+func WithTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, traceIDKey, traceID)
 }
 
-// GetTraceId 从 context.Context 中获取 traceId
-func GetTraceId(ctx context.Context) string {
+// GetTraceID 从 context.Context 中获取 traceID
+func GetTraceID(ctx context.Context) string {
 	if ctx == nil {
 		return ""
 	}
-	if traceId, ok := ctx.Value(traceIdKey).(string); ok {
-		return traceId
+	if traceID, ok := ctx.Value(traceIDKey).(string); ok {
+		return traceID
 	}
 	return ""
 }

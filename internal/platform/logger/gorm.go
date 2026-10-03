@@ -62,13 +62,13 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	switch {
 	case err != nil && l.LogLevel >= logger.Error && (!l.IgnoreRecordNotFoundError || !errors.Is(err, gorm.ErrRecordNotFound)):
 		level = slog.LevelError
-		message = "SQL 执行异常"
+		message = "sql 执行失败"
 	case l.SlowThreshold > 0 && elapsed > l.SlowThreshold && l.LogLevel >= logger.Warn:
 		level = slog.LevelWarn
-		message = "慢查询"
+		message = "sql 慢查询"
 	case l.LogLevel >= logger.Info:
 		level = slog.LevelInfo
-		message = "执行 SQL"
+		message = "sql 执行"
 	default:
 		return
 	}
@@ -80,16 +80,16 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	sql, rows := fc()
 
 	attrs := []slog.Attr{
-		slog.Duration("耗时", elapsed),
+		slog.Float64("durationMs", float64(elapsed)/float64(time.Millisecond)),
 		slog.Int64("rows", rows),
 		slog.String("sql", sql),
 	}
 
 	if level == slog.LevelError {
-		attrs = append(attrs, slog.Any("错误", err))
+		attrs = append(attrs, slog.Any("error", err))
 	}
 	if level == slog.LevelWarn {
-		attrs = append(attrs, slog.Duration("慢查询", l.SlowThreshold))
+		attrs = append(attrs, slog.Float64("slowThresholdMs", float64(l.SlowThreshold)/float64(time.Millisecond)))
 	}
 
 	slog.LogAttrs(ctx, level, message, attrs...)
@@ -108,4 +108,8 @@ func parseGormLogLevel(level string) logger.LogLevel {
 	default:
 		return logger.Info
 	}
+}
+
+func (l *GormLogger) ParamsFilter(_ context.Context, sql string, _ ...interface{}) (string, []interface{}) {
+	return sql, nil
 }

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"game-panel/internal/apperr"
 	"game-panel/internal/model/entity"
 	"game-panel/internal/model/request"
@@ -13,6 +12,7 @@ import (
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"log/slog"
 	"time"
 )
@@ -28,7 +28,7 @@ type AuthService interface {
 	Logout(ctx context.Context, accessToken string, refreshToken string) error
 	VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error)
 	ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error
-	GetProfile(ctx context.Context, userId uint64) (response.UserVO, error)
+	GetProfile(ctx context.Context, userID uint64) (response.UserVO, error)
 }
 
 type authService struct {
@@ -64,38 +64,38 @@ func NewAuthService(
 
 func (s *authService) Authenticate(ctx context.Context, accessToken string) (response.Identity, error) {
 	if accessToken == "" {
-		return response.Identity{}, apperr.NewBizError(401, "未携带登录凭证")
+		return response.Identity{}, apperr.NewBizError(401, "登录凭证缺失")
 	}
 
 	// 校验 accessToken
 	claims, err := s.jwtManager.ParseToken(accessToken, false)
 	if err != nil {
-		return response.Identity{}, apperr.NewBizError(401, "登录凭证无效或已过期，请重新登录")
+		return response.Identity{}, apperr.NewBizError(401, "登录凭证无效或已过期")
 	}
 
 	// 是否注销
 	isBlacklisted, err := s.authCache.IsTokenInBlacklist(ctx, accessToken)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询登录凭证黑名单失败", "错误", err)
-		return response.Identity{}, apperr.NewBizError(500, "身份认证服务暂时不可用")
+		slog.ErrorContext(ctx, "登录凭证黑名单查询失败", "error", err)
+		return response.Identity{}, apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if isBlacklisted {
-		return response.Identity{}, apperr.NewBizError(401, "登录凭证已注销，请重新登录")
+		return response.Identity{}, apperr.NewBizError(401, "登录凭证已注销")
 	}
 
 	// 查询用户
-	user, err := s.userRepo.GetById(ctx, claims.UserId)
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
-		slog.ErrorContext(ctx, "认证时查询用户失败", "用户ID", claims.UserId, "错误", err)
-		return response.Identity{}, apperr.NewBizError(500, "身份认证服务暂时不可用")
+		slog.ErrorContext(ctx, "用户查询失败", "userID", claims.UserID, "error", err)
+		return response.Identity{}, apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if user == nil || user.Status != 1 ||
 		user.TokenVersion != claims.TokenVersion {
-		return response.Identity{}, apperr.NewBizError(401, "登录状态已失效，请重新登录")
+		return response.Identity{}, apperr.NewBizError(401, "登录状态已失效")
 	}
 
 	return response.Identity{
-		UserId:   user.Id,
+		UserID:   user.ID,
 		Username: user.Username,
 		Role:     user.Role,
 	}, nil
@@ -113,6 +113,26 @@ func (s *authService) SendSMSCode(ctx context.Context, clientIP string, req *req
 
 // Register 用户账号注册
 func (s *authService) Register(ctx context.Context, req *request.RegisterReq) (response.LoginResp, string, error) {
+	// 用户名是否已注册
+	existUser, err := s.userRepo.GetByUsername(ctx, req.Username)
+	if err != nil {
+		slog.ErrorContext(ctx, "用户名查询失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "注册失败")
+	}
+	if existUser != nil {
+		return response.LoginResp{}, "", apperr.NewBizError(409, "用户名已注册")
+	}
+
+	// 手机号是否已注册
+	existUser, err = s.userRepo.GetByPhone(ctx, req.Phone)
+	if err != nil {
+		slog.ErrorContext(ctx, "手机号查询失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "注册失败")
+	}
+	if existUser != nil {
+		return response.LoginResp{}, "", apperr.NewBizError(409, "手机号已注册")
+	}
+
 	// 校验短信验证码
 	valid, err := s.smsService.VerifyCode(ctx, req.Phone, req.SMSCode)
 	if err != nil {
@@ -125,7 +145,7 @@ func (s *authService) Register(ctx context.Context, req *request.RegisterReq) (r
 	// 密码哈希
 	hashedPassword, err := s.hasher.HashPassword(req.Password)
 	if err != nil {
-		slog.ErrorContext(ctx, "密码哈希失败", "错误", err)
+		slog.ErrorContext(ctx, "密码哈希失败", "error", err)
 		return response.LoginResp{}, "", apperr.NewBizError(500, "密码哈希失败")
 	}
 	newUser := &entity.User{
@@ -136,62 +156,46 @@ func (s *authService) Register(ctx context.Context, req *request.RegisterReq) (r
 		Status:       1,
 		TokenVersion: 1,
 	}
-	err = s.tx.ExecTx(ctx, func(txCtx context.Context) error {
-		existUser, err := s.userRepo.GetByUsername(txCtx, req.Username)
-		if err != nil {
-			return fmt.Errorf("查询用户名失败: %w", err)
-		}
-		if existUser != nil {
-			return apperr.NewBizError(409, "用户名已被注册")
-		}
-		existUser, err = s.userRepo.GetByPhone(txCtx, req.Phone)
-		if err != nil {
-			return fmt.Errorf("查询手机号失败: %w", err)
-		}
-		if existUser != nil {
-			return apperr.NewBizError(409, "手机号已被注册")
-		}
-		if err := s.userRepo.Create(txCtx, newUser); err != nil {
-			return fmt.Errorf("创建用户失败: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
-		var bizErr *apperr.BizError
-		if errors.As(err, &bizErr) {
-			return response.LoginResp{}, "", bizErr
-		}
 
-		slog.ErrorContext(ctx, "创建注册用户失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "用户注册失败")
+	if err := s.userRepo.Create(ctx, newUser); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return response.LoginResp{}, "", apperr.NewBizError(409, "用户名或手机号已注册")
+		}
+		slog.ErrorContext(ctx, "用户创建失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "注册失败")
 	}
 
 	// 签发 accessToken 和 refreshToken
-	accessToken, err := s.jwtManager.GenerateAccessToken(newUser.Id, newUser.Username, newUser.Role, newUser.TokenVersion)
+	accessToken, err := s.jwtManager.GenerateAccessToken(newUser.ID, newUser.Username, newUser.Role, newUser.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 accessToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 accessToken 失败")
+		slog.ErrorContext(ctx, "accessToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "accessToken 签发失败")
 	}
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(newUser.Id, newUser.Username, newUser.Role, newUser.TokenVersion)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(newUser.ID, newUser.Username, newUser.Role, newUser.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 refreshToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 refreshToken 失败")
+		slog.ErrorContext(ctx, "refreshToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "refreshToken 签发失败")
 	}
-	return response.LoginResp{AccessToken: accessToken, UserId: newUser.Id, Username: newUser.Username, Role: newUser.Role}, refreshToken, nil
+	return response.LoginResp{AccessToken: accessToken, UserID: newUser.ID, Username: newUser.Username, Role: newUser.Role}, refreshToken, nil
 }
 
 // Login 用户登录逻辑
 func (s *authService) Login(ctx context.Context, req *request.LoginReq) (response.LoginResp, string, error) {
 	// 校验图形验证码
-	if !s.captchaService.Verify(ctx, req.CaptchaId, req.CaptchaCode, true) {
+	valid, err := s.captchaService.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
+	if err != nil {
+		slog.ErrorContext(ctx, "图形验证码读取失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(503, "图形验证码服务不可用")
+	}
+	if !valid {
 		return response.LoginResp{}, "", apperr.NewBizError(400, "图形验证码错误或已过期")
 	}
 
 	// 查询用户
 	user, err := s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询用户失败", "手机号", req.Phone, "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "用户登录失败")
+		slog.ErrorContext(ctx, "用户查询失败", "phone", req.Phone, "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "登录失败")
 	}
 
 	// 校验密码
@@ -201,22 +205,22 @@ func (s *authService) Login(ctx context.Context, req *request.LoginReq) (respons
 
 	// 校验账号状态
 	if user.Status != 1 {
-		return response.LoginResp{}, "", apperr.NewBizError(403, "账号已被禁用")
+		return response.LoginResp{}, "", apperr.NewBizError(403, "账号已禁用")
 	}
 
 	// 签发 accessToken 和 refreshToken
-	accessToken, err := s.jwtManager.GenerateAccessToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 accessToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 accessToken 失败")
+		slog.ErrorContext(ctx, "accessToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "accessToken 签发失败")
 	}
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 refreshToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 refreshToken 失败")
+		slog.ErrorContext(ctx, "refreshToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "refreshToken 签发失败")
 	}
 
-	return response.LoginResp{AccessToken: accessToken, UserId: user.Id, Username: user.Username, Role: user.Role}, refreshToken, nil
+	return response.LoginResp{AccessToken: accessToken, UserID: user.ID, Username: user.Username, Role: user.Role}, refreshToken, nil
 }
 
 func (s *authService) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (response.LoginResp, string, error) {
@@ -232,36 +236,36 @@ func (s *authService) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq
 	// 查询用户
 	user, err := s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询用户失败", "手机号", req.Phone, "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "用户登录失败")
+		slog.ErrorContext(ctx, "用户查询失败", "phone", req.Phone, "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "登录失败")
 	}
 	if user == nil {
-		return response.LoginResp{}, "", apperr.NewBizError(404, "该手机号尚未注册")
+		return response.LoginResp{}, "", apperr.NewBizError(404, "手机号未注册")
 	}
 
 	// 校验账号状态
 	if user.Status != 1 {
-		return response.LoginResp{}, "", apperr.NewBizError(403, "账号已被禁用")
+		return response.LoginResp{}, "", apperr.NewBizError(403, "账号已禁用")
 	}
 
 	// 签发 accessToken 和 refreshToken
-	accessToken, err := s.jwtManager.GenerateAccessToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	accessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 accessToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 accessToken 失败")
+		slog.ErrorContext(ctx, "accessToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "accessToken 签发失败")
 	}
-	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 refreshToken 失败", "错误", err)
-		return response.LoginResp{}, "", apperr.NewBizError(500, "签发 refreshToken 失败")
+		slog.ErrorContext(ctx, "refreshToken 签发失败", "error", err)
+		return response.LoginResp{}, "", apperr.NewBizError(500, "refreshToken 签发失败")
 	}
-	return response.LoginResp{AccessToken: accessToken, UserId: user.Id, Username: user.Username, Role: user.Role}, refreshToken, nil
+	return response.LoginResp{AccessToken: accessToken, UserID: user.ID, Username: user.Username, Role: user.Role}, refreshToken, nil
 }
 
 // RefreshToken 刷新 AccessToken、RefreshToken
 func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
 	if refreshToken == "" {
-		return "", "", apperr.NewBizError(401, "刷新凭证不能为空")
+		return "", "", apperr.NewBizError(401, "刷新凭证缺失")
 	}
 
 	// 解析 refreshToken
@@ -274,21 +278,21 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (st
 	}
 
 	// 查询用户是否存在
-	user, err := s.userRepo.GetById(ctx, claims.UserId)
+	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询用户失败", "用户ID", claims.UserId, "错误", err)
-		return "", "", apperr.NewBizError(500, "身份认证服务暂时不可用")
+		slog.ErrorContext(ctx, "用户查询失败", "userID", claims.UserID, "error", err)
+		return "", "", apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if user == nil {
 		return "", "", apperr.NewBizError(401, "用户不存在")
 	}
 	if claims.TokenVersion != user.TokenVersion {
-		return "", "", apperr.NewBizError(401, "登录状态已失效，请重新登录")
+		return "", "", apperr.NewBizError(401, "登录状态已失效")
 	}
 
 	// 校验用户状态
 	if user.Status != 1 {
-		return "", "", apperr.NewBizError(403, "账号已被禁用")
+		return "", "", apperr.NewBizError(403, "账号已禁用")
 	}
 
 	// refreshToken 剩余时间
@@ -298,25 +302,25 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (st
 	}
 
 	// 签发 accessToken 和 refreshToken
-	newAccessToken, err := s.jwtManager.GenerateAccessToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	newAccessToken, err := s.jwtManager.GenerateAccessToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 accessToken 失败", "错误", err)
-		return "", "", apperr.NewBizError(500, "签发 accessToken 失败")
+		slog.ErrorContext(ctx, "accessToken 签发失败", "error", err)
+		return "", "", apperr.NewBizError(500, "accessToken 签发失败")
 	}
-	newRefreshToken, err := s.jwtManager.GenerateRefreshToken(user.Id, user.Username, user.Role, user.TokenVersion)
+	newRefreshToken, err := s.jwtManager.GenerateRefreshToken(user.ID, user.Username, user.Role, user.TokenVersion)
 	if err != nil {
-		slog.ErrorContext(ctx, "签发 refreshToken 失败", "错误", err)
-		return "", "", apperr.NewBizError(500, "签发 refreshToken 失败")
+		slog.ErrorContext(ctx, "refreshToken 签发失败", "error", err)
+		return "", "", apperr.NewBizError(500, "refreshToken 签发失败")
 	}
 
 	// 消费旧 refreshToken
 	consumed, err := s.authCache.ConsumeRefreshToken(ctx, refreshToken, remainingTTL)
 	if err != nil {
-		slog.ErrorContext(ctx, "消费刷新凭证失败", "用户ID", user.Id, "错误", err)
-		return "", "", apperr.NewBizError(500, "身份认证服务暂时不可用")
+		slog.ErrorContext(ctx, "刷新凭证消费失败", "userID", user.ID, "error", err)
+		return "", "", apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if !consumed {
-		return "", "", apperr.NewBizError(401, "刷新凭证已失效")
+		return "", "", apperr.NewBizError(409, "刷新凭证已使用")
 	}
 	return newAccessToken, newRefreshToken, nil
 }
@@ -324,12 +328,12 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (st
 // Logout 登出
 func (s *authService) Logout(ctx context.Context, accessToken string, refreshToken string) error {
 	if err := s.revokeToken(ctx, refreshToken, true); err != nil {
-		slog.ErrorContext(ctx, "注销刷新凭证失败", "错误", err)
-		return apperr.NewBizError(503, "退出登录失败，请稍后重试")
+		slog.ErrorContext(ctx, "刷新凭证注销失败", "error", err)
+		return apperr.NewBizError(503, "退出登录失败")
 	}
 	if err := s.revokeToken(ctx, accessToken, false); err != nil {
-		slog.ErrorContext(ctx, "注销访问凭证失败", "错误", err)
-		return apperr.NewBizError(503, "退出登录失败，请稍后重试")
+		slog.ErrorContext(ctx, "访问凭证注销失败", "error", err)
+		return apperr.NewBizError(503, "退出登录失败")
 	}
 	return nil
 }
@@ -365,18 +369,18 @@ func (s *authService) VerifyResetCode(ctx context.Context, req *request.VerifyRe
 	// 查询用户
 	user, err := s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
-		slog.ErrorContext(ctx, "查询用户失败", "手机号", req.Phone, "错误", err)
-		return "", apperr.NewBizError(500, "密码重置服务暂时不可用")
+		slog.ErrorContext(ctx, "用户查询失败", "phone", req.Phone, "error", err)
+		return "", apperr.NewBizError(500, "密码重置服务不可用")
 	}
 	if user == nil {
-		return "", apperr.NewBizError(404, "该手机号尚未注册")
+		return "", apperr.NewBizError(404, "手机号未注册")
 	}
 
 	// 生成 resetToken
 	resetToken := uuid.NewString()
-	if err := s.authCache.SetResetToken(ctx, resetToken, user.Id, 10*time.Minute); err != nil {
-		slog.ErrorContext(ctx, "保存密码重置凭证失败", "用户ID", user.Id, "错误", err)
-		return "", apperr.NewBizError(500, "密码重置服务暂时不可用")
+	if err := s.authCache.SetResetToken(ctx, resetToken, user.ID, user.TokenVersion, 10*time.Minute); err != nil {
+		slog.ErrorContext(ctx, "密码重置凭证保存失败", "userID", user.ID, "error", err)
+		return "", apperr.NewBizError(500, "密码重置服务不可用")
 	}
 
 	return resetToken, nil
@@ -384,19 +388,19 @@ func (s *authService) VerifyResetCode(ctx context.Context, req *request.VerifyRe
 
 // ResetPassword 重置密码第二步
 func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error {
-	userId, err := s.authCache.ConsumeResetToken(ctx, req.ResetToken)
+	data, err := s.authCache.GetResetToken(ctx, req.ResetToken)
 	if err != nil {
-		slog.ErrorContext(ctx, "读取密码重置凭证失败", "错误", err)
-		return apperr.NewBizError(500, "密码重置服务暂时不可用")
+		slog.ErrorContext(ctx, "密码重置凭证读取失败", "error", err)
+		return apperr.NewBizError(500, "密码重置服务不可用")
 	}
-	if userId == 0 {
+	if data == nil {
 		return apperr.NewBizError(400, "密码重置凭证无效或已过期")
 	}
 
-	user, err := s.userRepo.GetById(ctx, userId)
+	user, err := s.userRepo.GetByID(ctx, data.UserID)
 	if err != nil {
-		slog.ErrorContext(ctx, "重置密码时查询用户失败", "用户ID", userId, "错误", err)
-		return apperr.NewBizError(500, "密码重置服务暂时不可用")
+		slog.ErrorContext(ctx, "用户查询失败", "userID", data.UserID, "error", err)
+		return apperr.NewBizError(500, "密码重置服务不可用")
 	}
 	if user == nil {
 		return apperr.NewBizError(404, "用户不存在")
@@ -405,27 +409,38 @@ func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPassw
 	// 密码哈希
 	hashedPassword, err := s.hasher.HashPassword(req.NewPassword)
 	if err != nil {
-		slog.ErrorContext(ctx, "新密码加密失败", "用户ID", userId, "错误", err)
+		slog.ErrorContext(ctx, "密码哈希失败", "userID", data.UserID, "error", err)
 		return apperr.NewBizError(500, "密码重置失败")
 	}
 
 	// 更新密码
-	if err := s.userRepo.UpdatePassword(ctx, userId, hashedPassword); err != nil {
-		slog.ErrorContext(ctx, "更新用户密码失败", "用户ID", userId, "错误", err)
+	updated, err := s.userRepo.UpdatePassword(ctx, data.UserID, hashedPassword, data.TokenVersion)
+	if err != nil {
+		slog.ErrorContext(ctx, "用户密码更新失败", "userID", data.UserID, "error", err)
 		return apperr.NewBizError(500, "密码重置失败")
+	}
+	if !updated {
+		return apperr.NewBizError(400, "密码重置凭证已失效")
+	}
+
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+
+	if err := s.authCache.DelResetToken(cleanupCtx, req.ResetToken); err != nil {
+		slog.ErrorContext(ctx, "密码重置凭证清理失败", "userID", data.UserID, "error", err)
 	}
 	return nil
 }
 
 // GetProfile 获取当前登录用户的基本信息
-func (s *authService) GetProfile(ctx context.Context, userId uint64) (response.UserVO, error) {
-	if userId == 0 {
-		return response.UserVO{}, apperr.NewBizError(401, "用户身份无效")
+func (s *authService) GetProfile(ctx context.Context, userID uint64) (response.UserVO, error) {
+	if userID == 0 {
+		return response.UserVO{}, apperr.NewBizError(401, "用户标识无效")
 	}
-	user, err := s.userRepo.GetById(ctx, userId)
+	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		slog.ErrorContext(ctx, "获取用户基本信息失败", "用户ID", userId, "错误", err)
-		return response.UserVO{}, apperr.NewBizError(500, "获取用户信息失败")
+		slog.ErrorContext(ctx, "用户查询失败", "userID", userID, "error", err)
+		return response.UserVO{}, apperr.NewBizError(500, "用户信息查询失败")
 	}
 	if user == nil {
 		return response.UserVO{}, apperr.NewBizError(404, "用户不存在")

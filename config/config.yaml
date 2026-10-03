@@ -10,6 +10,7 @@ server:
   allowed_origins:
     - "http://localhost:5173"
     - "http://127.0.0.1:5173"
+  cookie_secure: false
 
 log:
   level: "info"        # 日志级别: debug | info | warn | error
@@ -55,9 +56,10 @@ redis:
 
 jwt:
   access_secret: "access-secret-app"
-  access_expire: "15m"  # AccessToken 过期时间 (15分钟)
+  access_expire: "15m"
   refresh_secret: "refresh-secret-app"
-  refresh_expire: "168h"  # RefreshToken 过期时间 (7天)
+  refresh_expire: "168h"  # 7天
+  agent_secret: "agent_secret-app"
   issuer: "app"
 
 captcha:

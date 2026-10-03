@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	AccessKeyId     string
+	AccessKeyID     string
 	AccessKeySecret string
 	SignName        string
 	TemplateCode    string
@@ -26,13 +26,13 @@ type aliyunClient struct {
 
 func NewAliyunSMSClient(cfg Config) (Client, error) {
 	client, err := dysmsapi.NewClient(&openapi.Config{
-		AccessKeyId:     dara.String(cfg.AccessKeyId),
+		AccessKeyId:     dara.String(cfg.AccessKeyID),
 		AccessKeySecret: dara.String(cfg.AccessKeySecret),
 		Endpoint:        dara.String("dysmsapi.aliyuncs.com"),
 		RegionId:        dara.String("cn-hangzhou"),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("创建阿里云短信客户端失败: %w", err)
+		return nil, fmt.Errorf("阿里云短信客户端创建失败: %w", err)
 	}
 
 	return &aliyunClient{
@@ -51,7 +51,7 @@ func (c *aliyunClient) SendSMS(ctx context.Context, phone string, code string) e
 	// 参数名 code 对应短信模板中的 ${code}。
 	templateParam, err := json.Marshal(map[string]string{"code": code})
 	if err != nil {
-		return fmt.Errorf("序列化短信模板参数失败: %w", err)
+		return fmt.Errorf("短信模板参数序列化失败: %w", err)
 	}
 
 	request := &dysmsapi.SendSmsRequest{
@@ -71,24 +71,24 @@ func (c *aliyunClient) SendSMS(ctx context.Context, phone string, code string) e
 
 	response, err := c.client.SendSmsWithOptions(request, runtime)
 	if err != nil {
-		return fmt.Errorf("调用阿里云短信接口失败: %w", err)
+		return fmt.Errorf("阿里云短信接口调用失败: %w", err)
 	}
 
 	if response == nil || response.Body == nil {
-		return fmt.Errorf("阿里云短信接口返回空响应")
+		return fmt.Errorf("阿里云短信响应为空")
 	}
 
 	body := response.Body
 	if dara.StringValue(body.Code) != "OK" {
 		return fmt.Errorf(
-			"阿里云短信提交失败: code=%s, message=%s, request_id=%s",
+			"阿里云短信提交失败 code=%s message=%q requestID=%s",
 			dara.StringValue(body.Code),
 			dara.StringValue(body.Message),
 			dara.StringValue(body.RequestId),
 		)
 	}
 
-	slog.InfoContext(ctx, "阿里云短信已受理", "request_id", dara.StringValue(body.RequestId), "biz_id", dara.StringValue(body.BizId))
+	slog.InfoContext(ctx, "阿里云短信已受理", "requestID", dara.StringValue(body.RequestId), "bizID", dara.StringValue(body.BizId))
 
 	return nil
 }

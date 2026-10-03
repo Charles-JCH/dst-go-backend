@@ -13,23 +13,23 @@ type Response struct {
 	Code    int    `json:"code"`
 	Msg     string `json:"msg"`
 	Data    any    `json:"data"`
-	TraceId string `json:"traceId,omitempty"`
+	TraceID string `json:"traceID,omitempty"`
 }
 
 // jsonResponse 统一响应 JSON
 func jsonResponse(c *gin.Context, httpStatus int, code int, msg string, data any) {
-	traceId := logger.GetTraceId(c.Request.Context())
+	traceID := logger.GetTraceID(c.Request.Context())
 	c.JSON(httpStatus, Response{
 		Code:    code,
 		Msg:     msg,
 		Data:    data,
-		TraceId: traceId,
+		TraceID: traceID,
 	})
 }
 
 // Success 成功
 func Success(c *gin.Context, data any) {
-	jsonResponse(c, http.StatusOK, http.StatusOK, "Success", data)
+	jsonResponse(c, http.StatusOK, http.StatusOK, "成功", data)
 }
 
 // SuccessWithMsg 自定义成功信息
@@ -44,7 +44,7 @@ func Fail(c *gin.Context, err error) {
 		FailWithMsg(c, bizErr.Code, bizErr.Message)
 		return
 	}
-	FailWithMsg(c, 500, "系统繁忙，请稍后再试")
+	FailWithMsg(c, 500, "服务器内部错误")
 }
 
 // FailWithMsg 自定义失败状态码和错误消息

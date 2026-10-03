@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"fmt"
+	"game-panel/internal/agent_manager"
 	"game-panel/internal/config"
 	"game-panel/internal/handler/v1"
 	"game-panel/internal/platform/captcha"
@@ -9,6 +10,7 @@ import (
 	"game-panel/internal/platform/jwt"
 	"game-panel/internal/platform/redis"
 	"game-panel/internal/platform/sms"
+	"game-panel/internal/protocol"
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
 	"game-panel/internal/router"
@@ -20,7 +22,7 @@ func Run(configPath string) error {
 	// 初始化配置
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return fmt.Errorf("加载配置失败: %w", err)
+		return fmt.Errorf("配置加载失败: %w", err)
 	}
 
 	// 初始化日志
@@ -35,11 +37,11 @@ func Run(configPath string) error {
 	}
 	sqlDB, err := sqlite.DB()
 	if err != nil {
-		return fmt.Errorf("获取数据库连接池失败: %w", err)
+		return fmt.Errorf("数据库连接池获取失败: %w", err)
 	}
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
-			slog.Error("关闭 SQLite 失败", "错误", err)
+			slog.Error("sqlite 关闭失败", "error", err)
 		}
 	}()
 
@@ -50,7 +52,7 @@ func Run(configPath string) error {
 	}
 	defer func() {
 		if err := rdb.Close(); err != nil {
-			slog.Error("关闭 Redis 失败", "错误", err)
+			slog.Error("redis 关闭失败", "error", err)
 		}
 	}()
 
@@ -70,7 +72,7 @@ func Run(configPath string) error {
 	case "mock":
 		smsClient = sms.NewMockSMSClient()
 	default:
-		return fmt.Errorf("不支持的短信服务商: %q", cfg.SMS.Provider)
+		return fmt.Errorf("不支持短信服务商 provider=%q", cfg.SMS.Provider)
 	}
 
 	// repository
@@ -86,10 +88,51 @@ func Run(configPath string) error {
 	authService := service.NewAuthService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
 
 	// handler
-	authHandler := v1.NewAuthHandler(authService, cfg.JWT.RefreshExpire)
+	authHandler := v1.NewAuthHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
+
+	// agent
+	agentHub := agent_manager.NewHub()
+	agentAuth := agent_manager.NewAuth(jwtManager)
+	agentService := agent_manager.NewService(agentHub)
+	agentService.OnAck = func(serverID uint64, id string, ack protocol.Ack) {
+		slog.Info("agent 命令确认",
+			"serverID", serverID,
+			"commandID", id,
+			"accepted", ack.Accepted,
+			"reason", ack.Reason,
+		)
+	}
+	agentService.OnLog = func(serverID uint64, id string, line protocol.Log) {
+		slog.Info("agent 执行日志",
+			"serverID", serverID,
+			"commandID", id,
+			"content", line.Content,
+		)
+	}
+	agentService.OnResult = func(serverID uint64, id string, res protocol.Result) {
+		slog.Info("agent 执行结果",
+			"serverID", serverID,
+			"commandID", id,
+			"success", res.Success,
+			"exitCode", res.ExitCode,
+			"error", res.Error,
+		)
+	}
+	agentService.OnInterrupted = func(
+		serverID uint64,
+		id string,
+		reason string,
+	) {
+		slog.Warn("agent 命令结果未知",
+			"serverID", serverID,
+			"commandID", id,
+			"reason", reason,
+		)
+	}
+	agentHandler := agent_manager.NewHandler(agentHub, agentAuth, agentService)
 
 	// 注册路由
-	engine := router.InitRouter(cfg.Server, limiter, authHandler, authService)
+	engine := router.InitRouter(cfg.Server, limiter, authService, authHandler, agentHandler)
 
 	return RunHTTPServer(cfg.Server, engine)
 }

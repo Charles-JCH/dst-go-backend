@@ -90,7 +90,7 @@ return 1
 func (l *smsLimit) Reserve(ctx context.Context, ip, phone string, policy SMSLimitPolicy) (*SMSReservation, SMSLimitReason, error) {
 	if policy.IPMinute <= 0 || policy.PhoneMinute <= 0 ||
 		policy.IPDay <= 0 || policy.PhoneDay <= 0 {
-		return nil, SMSLimitAllowed, fmt.Errorf("短信限流额度必须大于零")
+		return nil, SMSLimitAllowed, fmt.Errorf("短信限流额度须大于 0")
 	}
 
 	keys := []string{
@@ -112,7 +112,7 @@ func (l *smsLimit) Reserve(ctx context.Context, ip, phone string, policy SMSLimi
 		id,
 	).Int64()
 	if err != nil {
-		return nil, SMSLimitAllowed, fmt.Errorf("检查短信发送额度失败: %w", err)
+		return nil, SMSLimitAllowed, fmt.Errorf("短信发送额度检查失败: %w", err)
 	}
 	if reason != 0 {
 		return nil, SMSLimitReason(reason), nil
@@ -132,7 +132,7 @@ func (l *smsLimit) Release(ctx context.Context, reservation *SMSReservation) err
 	defer cancel()
 
 	if err := releaseSMSLua.Run(cleanupCtx, l.client, reservation.keys, reservation.id).Err(); err != nil {
-		return fmt.Errorf("退还短信发送额度失败: %w", err)
+		return fmt.Errorf("短信发送额度退还失败: %w", err)
 	}
 	return nil
 }

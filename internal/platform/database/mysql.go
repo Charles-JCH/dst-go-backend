@@ -52,13 +52,13 @@ func NewMySQL(cfg *MySQLConfig) (*gorm.DB, error) {
 	// 打开 MySQL 连接
 	db, err := gorm.Open(mysql.Open(dsn), gormConfig)
 	if err != nil {
-		return nil, fmt.Errorf("打开 MySQL 数据库连接失败: %w", err)
+		return nil, fmt.Errorf("mysql 数据库打开失败: %w", err)
 	}
 
 	// 获取底层 *sql.DB
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("获取底层的 sql.DB 失败: %w", err)
+		return nil, fmt.Errorf("数据库连接池获取失败: %w", err)
 	}
 
 	// 设置连接池参数
@@ -82,7 +82,7 @@ func NewMySQL(cfg *MySQLConfig) (*gorm.DB, error) {
 
 	if err := sqlDB.PingContext(ctx); err != nil {
 		_ = sqlDB.Close()
-		return nil, fmt.Errorf("连接 MySQL 失败 [%s:%d]: %w", cfg.Host, cfg.Port, err)
+		return nil, fmt.Errorf("mysql 连接失败 addr=%s:%d: %w", cfg.Host, cfg.Port, err)
 	}
 
 	return db, nil

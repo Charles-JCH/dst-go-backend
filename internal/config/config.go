@@ -29,6 +29,7 @@ type ServerConfig struct {
 	Port           int      `mapstructure:"port"`
 	Mode           string   `mapstructure:"mode"`
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
+	CookieSecure   bool     `mapstructure:"cookie_secure"`
 }
 
 type LogConfig struct {
@@ -82,6 +83,7 @@ type JWTConfig struct {
 	AccessExpire  time.Duration `mapstructure:"access_expire"`
 	RefreshSecret string        `mapstructure:"refresh_secret"`
 	RefreshExpire time.Duration `mapstructure:"refresh_expire"`
+	AgentSecret   string        `mapstructure:"agent_secret"`
 	Issuer        string        `mapstructure:"issuer"`
 }
 
@@ -100,7 +102,7 @@ type SMSConfig struct {
 }
 
 type AliyunSMS struct {
-	AccessKeyId     string `mapstructure:"access_key_id"`
+	AccessKeyID     string `mapstructure:"access_key_id"`
 	AccessKeySecret string `mapstructure:"access_key_secret"`
 	SignName        string `mapstructure:"sign_name"`
 	TemplateCode    string `mapstructure:"template_code"`
@@ -119,13 +121,13 @@ func Load(configPath string) (*Config, error) {
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("读取配置文件失败: %w", err)
+		return nil, fmt.Errorf("配置文件读取失败: %w", err)
 	}
 
 	// 反序列化
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("解析配置文件失败: %w", err)
+		return nil, fmt.Errorf("配置文件解析失败: %w", err)
 	}
 
 	return &cfg, nil

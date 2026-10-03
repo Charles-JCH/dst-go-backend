@@ -32,6 +32,17 @@ func (s *RedisStore) Set(id string, value string) error {
 // Get 获取验证码
 func (s *RedisStore) Get(id string, clear bool) string {
 	ctx := context.Background()
+
+	val, err := s.GetWithContext(ctx, id, clear)
+	if err != nil {
+		slog.ErrorContext(ctx, "图形验证码读取失败", "error", err)
+		return ""
+	}
+
+	return val
+}
+
+func (s *RedisStore) GetWithContext(ctx context.Context, id string, clear bool) (string, error) {
 	key := s.prefix + id
 	var val string
 	var err error
@@ -43,13 +54,12 @@ func (s *RedisStore) Get(id string, clear bool) string {
 	}
 
 	if errors.Is(err, redis.Nil) {
-		return ""
+		return "", nil
 	}
 	if err != nil {
-		slog.ErrorContext(ctx, "读取图形验证码失败", "错误", err)
-		return ""
+		return "", err
 	}
-	return val
+	return val, nil
 }
 
 // Verify 校验验证码

@@ -5,7 +5,7 @@ import (
 )
 
 type UserVO struct {
-	Id       uint64  `json:"id"`
+	ID       uint64  `json:"id"`
 	Username string  `json:"username"`
 	Phone    string  `json:"phone"`
 	Email    *string `json:"email"`
@@ -15,7 +15,7 @@ type UserVO struct {
 
 func ToUserVO(u *entity.User) *UserVO {
 	return &UserVO{
-		Id:       u.Id,
+		ID:       u.ID,
 		Username: u.Username,
 		Phone:    u.Phone,
 		Email:    u.Email,

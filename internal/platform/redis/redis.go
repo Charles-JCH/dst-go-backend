@@ -35,7 +35,7 @@ func NewRedisClient(cfg *Config) (*redis.Client, error) {
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		_ = rdb.Close()
-		return nil, fmt.Errorf("连接 Redis 失败 [%s:%d]: %w", cfg.Host, cfg.Port, err)
+		return nil, fmt.Errorf("redis 连接失败 addr=%s:%d: %w", cfg.Host, cfg.Port, err)
 	}
 
 	return rdb, nil

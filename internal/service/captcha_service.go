@@ -10,7 +10,7 @@ import (
 
 type CaptchaService interface {
 	GenerateCaptcha(ctx context.Context) (response.GetCaptchaResp, error)
-	Verify(ctx context.Context, id string, answer string, clear bool) bool
+	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
 }
 
 type captchaService struct {
@@ -25,15 +25,15 @@ func NewCaptchaService(cp captcha.Captcha) CaptchaService {
 func (s *captchaService) GenerateCaptcha(ctx context.Context) (response.GetCaptchaResp, error) {
 	id, b64s, err := s.captcha.Generate()
 	if err != nil {
-		slog.ErrorContext(ctx, "生成图形验证码失败", "错误", err)
+		slog.ErrorContext(ctx, "图形验证码生成失败", "error", err)
 		return response.GetCaptchaResp{}, apperr.NewBizError(500, "图形验证码生成失败")
 	}
 	return response.GetCaptchaResp{
-		CaptchaId:  id,
+		CaptchaID:  id,
 		CaptchaImg: b64s,
 	}, nil
 }
 
-func (s *captchaService) Verify(_ context.Context, id string, answer string, clear bool) bool {
-	return s.captcha.Verify(id, answer, clear)
+func (s *captchaService) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
+	return s.captcha.Verify(ctx, id, answer, clear)
 }
