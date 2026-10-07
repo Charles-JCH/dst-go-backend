@@ -4,7 +4,7 @@ import (
 	"game-panel/internal/model/entity"
 )
 
-type UserVO struct {
+type UserResp struct {
 	ID       uint64  `json:"id"`
 	Username string  `json:"username"`
 	Phone    string  `json:"phone"`
@@ -13,8 +13,8 @@ type UserVO struct {
 	Status   int     `json:"status"`
 }
 
-func ToUserVO(u *entity.User) *UserVO {
-	return &UserVO{
+func ToUserResp(u *entity.User) *UserResp {
+	return &UserResp{
 		ID:       u.ID,
 		Username: u.Username,
 		Phone:    u.Phone,

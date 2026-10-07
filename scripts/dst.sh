@@ -777,12 +777,12 @@ show_menu() {
     echo "================================="
     echo -e "${C_GREEN}     DST 饥荒服务器管理面板${C_RESET}"
     echo "================================="
-    echo "  1. 初始化存档"
-    echo "  2. 启动服务器存档"
-    echo "  3. 停止服务器存档"
-    echo "  4. 检查更新"
-    echo "  5. 删除服务器存档"
-    echo "  6. 查看存档运行状态"
+    echo "  1. 初始化"
+    echo "  2. 启动"
+    echo "  3. 停止"
+    echo "  4. 查看状态"
+    echo "  5. 检查更新"
+    echo "  6. 删除"
     echo "  7. 退出"
     echo "---------------------------------"
     read -rp "请选择[1-7]: " choice
@@ -791,9 +791,9 @@ show_menu() {
         1) init_cluster  ;;
         2) start_server  ;;
         3) stop_server   ;;
-        4) update_server ;;
-        5) delete_server ;;
-        6) check_status || true ;;
+        4) check_status || true ;;
+        5) update_server ;;
+        6) delete_server ;;
         7) exit 0 ;;
         *) warn "无效选项，请重新输入" ;;
     esac
@@ -832,11 +832,11 @@ main() {
             init)   init_cluster  "${2:-1}" "${3:-}" ;;
             start)  start_server  "${2:-1}" ;;
             stop)   stop_server   "${2:-1}" ;;
+            status) check_status  "${2:-1}" ;;
             update) update_server ;;
             delete) delete_server "${2:-1}" ;;
-            status) check_status  "${2:-1}" ;;
             *)
-                echo "用法: $0 [deploy|init|start|stop|update|delete|status] [1-5] [token]"
+                echo "用法: $0 [deploy|init|start|stop|status|update|delete] [1-5] [token]"
                 exit 1
                 ;;
         esac

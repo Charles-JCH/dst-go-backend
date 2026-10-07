@@ -17,8 +17,14 @@ import (
 	"time"
 )
 
+type Identity struct {
+	UserID   uint64
+	Username string
+	Role     string
+}
+
 type AuthService interface {
-	Authenticate(ctx context.Context, accessToken string) (response.Identity, error)
+	Authenticate(ctx context.Context, accessToken string) (*Identity, error)
 	GenerateCaptcha(ctx context.Context) (response.GetCaptchaResp, error)
 	SendSMSCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error
 	Register(ctx context.Context, req *request.RegisterReq) (response.LoginResp, string, error)
@@ -28,7 +34,7 @@ type AuthService interface {
 	Logout(ctx context.Context, accessToken string, refreshToken string) error
 	VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error)
 	ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error
-	GetProfile(ctx context.Context, userID uint64) (response.UserVO, error)
+	GetProfile(ctx context.Context, userID uint64) (response.UserResp, error)
 }
 
 type authService struct {
@@ -62,39 +68,39 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) Authenticate(ctx context.Context, accessToken string) (response.Identity, error) {
+func (s *authService) Authenticate(ctx context.Context, accessToken string) (*Identity, error) {
 	if accessToken == "" {
-		return response.Identity{}, apperr.NewBizError(401, "登录凭证缺失")
+		return nil, apperr.NewBizError(401, "登录凭证缺失")
 	}
 
 	// 校验 accessToken
 	claims, err := s.jwtManager.ParseToken(accessToken, false)
 	if err != nil {
-		return response.Identity{}, apperr.NewBizError(401, "登录凭证无效或已过期")
+		return nil, apperr.NewBizError(401, "登录凭证无效或已过期")
 	}
 
 	// 是否注销
 	isBlacklisted, err := s.authCache.IsTokenInBlacklist(ctx, accessToken)
 	if err != nil {
 		slog.ErrorContext(ctx, "登录凭证黑名单查询失败", "error", err)
-		return response.Identity{}, apperr.NewBizError(500, "身份认证服务不可用")
+		return nil, apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if isBlacklisted {
-		return response.Identity{}, apperr.NewBizError(401, "登录凭证已注销")
+		return nil, apperr.NewBizError(401, "登录凭证已注销")
 	}
 
 	// 查询用户
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
 		slog.ErrorContext(ctx, "用户查询失败", "userID", claims.UserID, "error", err)
-		return response.Identity{}, apperr.NewBizError(500, "身份认证服务不可用")
+		return nil, apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if user == nil || user.Status != 1 ||
 		user.TokenVersion != claims.TokenVersion {
-		return response.Identity{}, apperr.NewBizError(401, "登录状态已失效")
+		return nil, apperr.NewBizError(401, "登录状态已失效")
 	}
 
-	return response.Identity{
+	return &Identity{
 		UserID:   user.ID,
 		Username: user.Username,
 		Role:     user.Role,
@@ -433,19 +439,19 @@ func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPassw
 }
 
 // GetProfile 获取当前登录用户的基本信息
-func (s *authService) GetProfile(ctx context.Context, userID uint64) (response.UserVO, error) {
+func (s *authService) GetProfile(ctx context.Context, userID uint64) (response.UserResp, error) {
 	if userID == 0 {
-		return response.UserVO{}, apperr.NewBizError(401, "用户标识无效")
+		return response.UserResp{}, apperr.NewBizError(401, "用户标识无效")
 	}
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		slog.ErrorContext(ctx, "用户查询失败", "userID", userID, "error", err)
-		return response.UserVO{}, apperr.NewBizError(500, "用户信息查询失败")
+		return response.UserResp{}, apperr.NewBizError(500, "用户信息查询失败")
 	}
 	if user == nil {
-		return response.UserVO{}, apperr.NewBizError(404, "用户不存在")
+		return response.UserResp{}, apperr.NewBizError(404, "用户不存在")
 	}
 
-	profile := response.ToUserVO(user)
+	profile := response.ToUserResp(user)
 	return *profile, nil
 }
