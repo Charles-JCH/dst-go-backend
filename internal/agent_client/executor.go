@@ -50,7 +50,6 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, e.cfg.ScriptPath, args...)
-
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return &protocol.Result{
@@ -61,6 +60,7 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 			Error:    fmt.Sprintf("stdout 管道创建失败: %v", err),
 		}
 	}
+
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return &protocol.Result{
@@ -84,12 +84,10 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 
 	var wg sync.WaitGroup
 	wg.Add(2)
-
 	go func() {
 		defer wg.Done()
 		e.readOutput(stdout, onLog)
 	}()
-
 	go func() {
 		defer wg.Done()
 		e.readOutput(stderr, onLog)
@@ -151,6 +149,7 @@ func (e *Executor) readOutput(r io.Reader, onLog LogFunc) {
 			onLog(scanner.Text())
 		}
 	}
+
 	if err := scanner.Err(); err != nil && onLog != nil {
 		onLog(fmt.Sprintf("日志读取失败: %v", err))
 	}
@@ -160,19 +159,12 @@ func (e *Executor) buildArgs(payload protocol.CmdPayload) ([]string, error) {
 	switch payload.Action {
 	case protocol.ActionDeploy, protocol.ActionUpdate:
 		return []string{payload.Action}, nil
-
-	case protocol.ActionInit,
-		protocol.ActionStart,
-		protocol.ActionStop,
-		protocol.ActionDelete,
-		protocol.ActionStatus:
-
+	case protocol.ActionInit, protocol.ActionStart, protocol.ActionStop, protocol.ActionDelete, protocol.ActionStatus:
 		args := []string{payload.Action, strconv.Itoa(payload.Slot)}
 		if payload.Action == protocol.ActionInit {
 			args = append(args, payload.ClusterToken)
 		}
 		return args, nil
-
 	default:
 		return nil, fmt.Errorf("不支持操作 action=%s", payload.Action)
 	}

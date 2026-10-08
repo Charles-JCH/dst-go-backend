@@ -133,7 +133,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 	accessToken := parts[1]
-
 	refreshToken, err := c.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		refreshToken = ""

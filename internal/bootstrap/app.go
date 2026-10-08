@@ -30,6 +30,12 @@ func Run(configPath string) error {
 		return err
 	}
 
+	// 初始化 AES 加密组件
+	encryptor, err := crypto.NewAESEncryptor(cfg.Crypto.AESKey)
+	if err != nil {
+		return fmt.Errorf("AES 加密组件初始化失败: %w", err)
+	}
+
 	// 初始化 SQLite
 	sqlite, err := InitSQLite(cfg.SQLite)
 	if err != nil {
@@ -61,7 +67,9 @@ func Run(configPath string) error {
 	captchaManager := captcha.NewCaptcha(captcha.Config(cfg.Captcha), rdb)
 	jwtManager := jwt.NewTokenManager(jwt.Config(cfg.JWT))
 	passwordHasher := crypto.NewPasswordHasher()
+	agentHub := agent_manager.NewHub()
 
+	// 初始化 SMS
 	var smsClient sms.Client
 	switch cfg.SMS.Provider {
 	case "aliyun":
@@ -77,6 +85,7 @@ func Run(configPath string) error {
 
 	// repository
 	userRepo := repository.NewUserRepository(sqlite)
+	serverRepo := repository.NewServerRepository(sqlite)
 	txManager := repository.NewTransaction(sqlite)
 	authCache := cache.NewAuthCache(rdb)
 	smsCache := cache.NewSMSCache(rdb)
@@ -86,13 +95,14 @@ func Run(configPath string) error {
 	captchaService := service.NewCaptchaService(captchaManager)
 	smsService := service.NewSMSService(captchaManager, smsCache, smsClient, smsLimit)
 	authService := service.NewAuthService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
+	serverService := service.NewServerService(serverRepo, encryptor, agentHub)
 
 	// handler
 	authHandler := v1.NewAuthHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
+	serverHandler := v1.NewServerHandler(serverService)
 
 	// agent
-	agentHub := agent_manager.NewHub()
-	agentAuth := agent_manager.NewAuth(jwtManager)
+	agentAuth := agent_manager.NewAuth(jwtManager, serverRepo)
 	agentService := agent_manager.NewService(agentHub)
 	agentService.OnAck = func(serverID uint64, id string, ack protocol.Ack) {
 		slog.Info("agent 命令确认",
@@ -132,7 +142,14 @@ func Run(configPath string) error {
 	agentHandler := agent_manager.NewHandler(agentHub, agentAuth, agentService)
 
 	// 注册路由
-	engine := router.InitRouter(cfg.Server, limiter, authService, authHandler, agentHandler)
+	engine := router.InitRouter(
+		cfg.Server,
+		limiter,
+		authService,
+		authHandler,
+		serverHandler,
+		agentHandler,
+	)
 
 	return RunHTTPServer(cfg.Server, engine)
 }

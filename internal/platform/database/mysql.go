@@ -46,7 +46,8 @@ func NewMySQL(cfg *MySQLConfig) (*gorm.DB, error) {
 	}
 
 	gormConfig := &gorm.Config{
-		Logger: logger.Default.LogMode(gormLogLevel),
+		Logger:         logger.Default.LogMode(gormLogLevel),
+		TranslateError: true,
 	}
 
 	// 打开 MySQL 连接

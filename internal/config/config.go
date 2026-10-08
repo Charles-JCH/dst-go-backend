@@ -16,6 +16,7 @@ type Config struct {
 	JWT     JWTConfig     `mapstructure:"jwt"`
 	Captcha CaptchaConfig `mapstructure:"captcha"`
 	SMS     SMSConfig     `mapstructure:"sms"`
+	Crypto  CryptoConfig  `mapstructure:"crypto"`
 }
 
 type AppConfig struct {
@@ -106,6 +107,10 @@ type AliyunSMS struct {
 	AccessKeySecret string `mapstructure:"access_key_secret"`
 	SignName        string `mapstructure:"sign_name"`
 	TemplateCode    string `mapstructure:"template_code"`
+}
+
+type CryptoConfig struct {
+	AESKey string `mapstructure:"aes_key"`
 }
 
 // Load 读取并解析配置文件

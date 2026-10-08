@@ -8,8 +8,7 @@ import (
 )
 
 type Service struct {
-	hub *Hub
-
+	hub           *Hub
 	OnAck         func(serverID uint64, id string, ack protocol.Ack)
 	OnLog         func(serverID uint64, id string, line protocol.Log)
 	OnResult      func(serverID uint64, id string, result protocol.Result)

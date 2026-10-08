@@ -50,9 +50,9 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		return
 	}
 
-	serverID, err := h.auth.Authenticate(token)
+	serverID, err := h.auth.Authenticate(ctx, token)
 	if err != nil {
-		result.FailWithMsg(c, 401, "agent 认证失败")
+		result.Fail(c, err)
 		return
 	}
 
@@ -61,16 +61,27 @@ func (h *Handler) ServeWS(c *gin.Context) {
 		slog.WarnContext(ctx, "websocket 升级失败", "serverID", serverID, "error", err)
 		return
 	}
+	defer conn.Close()
 
 	conn.SetReadLimit(readLimit)
 
 	if err := conn.SetReadDeadline(time.Now().Add(readTimeout)); err != nil {
-		_ = conn.Close()
+		slog.WarnContext(ctx, "agent 读取超时设置失败", "serverID", serverID, "error", err)
 		return
 	}
 
 	h.hub.Register(serverID, conn)
 	defer h.hub.Unregister(serverID, conn)
+
+	if err := h.auth.CheckServer(ctx, serverID); err != nil {
+		slog.WarnContext(ctx, "agent 注册后校验失败", "serverID", serverID, "error", err)
+		_ = conn.WriteControl(
+			websocket.CloseMessage,
+			websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "agent authorization failed"),
+			time.Now().Add(5*time.Second),
+		)
+		return
+	}
 
 	h.readLoop(ctx, serverID, conn)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 type CaptchaService interface {
-	GenerateCaptcha(ctx context.Context) (response.GetCaptchaResp, error)
+	GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error)
 	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
 }
 
@@ -22,13 +22,13 @@ func NewCaptchaService(cp captcha.Captcha) CaptchaService {
 }
 
 // GenerateCaptcha 获取图形验证码
-func (s *captchaService) GenerateCaptcha(ctx context.Context) (response.GetCaptchaResp, error) {
+func (s *captchaService) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error) {
 	id, b64s, err := s.captcha.Generate()
 	if err != nil {
 		slog.ErrorContext(ctx, "图形验证码生成失败", "error", err)
-		return response.GetCaptchaResp{}, apperr.NewBizError(500, "图形验证码生成失败")
+		return nil, apperr.NewBizError(500, "图形验证码生成失败")
 	}
-	return response.GetCaptchaResp{
+	return &response.GetCaptchaResp{
 		CaptchaID:  id,
 		CaptchaImg: b64s,
 	}, nil

@@ -42,7 +42,6 @@ func RunHTTPServer(cfg config.ServerConfig, handler *gin.Engine) error {
 			return nil
 		}
 		return fmt.Errorf("http 监听失败: %w", err)
-
 	case sig := <-quit:
 		slog.Info("http 停机开始", "signal", sig.String())
 	}
@@ -52,7 +51,6 @@ func RunHTTPServer(cfg config.ServerConfig, handler *gin.Engine) error {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("http 优雅停机失败，强制关闭连接", "error", err)
-
 		if closeErr := srv.Close(); closeErr != nil {
 			return errors.Join(fmt.Errorf("http 优雅停机失败: %w", err), fmt.Errorf("http 强制关闭失败: %w", closeErr))
 		}

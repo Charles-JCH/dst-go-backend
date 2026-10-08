@@ -14,7 +14,7 @@ type UserRepository interface {
 	GetByPhone(ctx context.Context, phone string) (*entity.User, error)
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	Update(ctx context.Context, userID uint64, username string) error
-	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) (bool, error)
+	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error
 }
 
 type userRepository struct {
@@ -37,7 +37,9 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 // GetByID 根据用户 ID 查询
 func (r *userRepository) GetByID(ctx context.Context, userID uint64) (*entity.User, error) {
 	var user entity.User
-	err := r.getDB(ctx).Where("id = ?", userID).First(&user).Error
+	err := r.getDB(ctx).
+		Where("id = ?", userID).
+		First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -50,7 +52,9 @@ func (r *userRepository) GetByID(ctx context.Context, userID uint64) (*entity.Us
 // GetByUsername 根据用户名查询
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
 	var user entity.User
-	err := r.getDB(ctx).Where("username = ?", username).First(&user).Error
+	err := r.getDB(ctx).
+		Where("username = ?", username).
+		First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -63,7 +67,9 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*e
 // GetByPhone 根据手机号查询
 func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
 	var user entity.User
-	err := r.getDB(ctx).Where("phone = ?", phone).First(&user).Error
+	err := r.getDB(ctx).
+		Where("phone = ?", phone).
+		First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -76,7 +82,9 @@ func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entity.
 // GetByEmail 根据邮箱查询
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user entity.User
-	err := r.getDB(ctx).Where("email = ?", email).First(&user).Error
+	err := r.getDB(ctx).
+		Where("email = ?", email).
+		First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -95,14 +103,21 @@ func (r *userRepository) Update(ctx context.Context, userID uint64, username str
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
+	if result.RowsAffected > 0 {
+		return nil
+	}
+	user, err := r.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
 }
 
 // UpdatePassword 更新用户密码并递增令牌版本
-func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) (bool, error) {
+func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error {
 	result := r.getDB(ctx).
 		Model(&entity.User{}).
 		Where("id = ? AND token_version = ?", userID, tokenVersion).
@@ -111,7 +126,17 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, pass
 			"token_version": gorm.Expr("token_version + 1"),
 		})
 	if result.Error != nil {
-		return false, result.Error
+		return result.Error
 	}
-	return result.RowsAffected == 1, nil
+	if result.RowsAffected > 0 {
+		return nil
+	}
+	user, err := r.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
 }

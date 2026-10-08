@@ -77,3 +77,6 @@ sms:
     access_key_secret: "aliyun-access-key-secret"
     sign_name: "Charles"
     template_code: "SMS_123456"
+
+crypto:
+  aes_key: "0123456789abcdef0123456789abcdef"

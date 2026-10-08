@@ -12,11 +12,13 @@ func RegisterV1Routes(
 	r *gin.Engine,
 	authService service.AuthService,
 	authHandler *v1.AuthHandler,
+	serverHandler *v1.ServerHandler,
 	agentHandler *agent_manager.Handler,
 	rateLimit gin.HandlerFunc,
 ) {
 	v1Group := r.Group("/api/v1")
 	rateLimitGroup := v1Group.Group("", rateLimit)
+
 	authGroup := rateLimitGroup.Group("/auth")
 	{
 		authGroup.GET("/captcha", authHandler.GetCaptcha)
@@ -29,10 +31,19 @@ func RegisterV1Routes(
 		authGroup.POST("/password/verify", authHandler.VerifyResetCode)
 		authGroup.POST("/password/reset", authHandler.ResetPassword)
 	}
+
 	protected := rateLimitGroup.Group("")
 	protected.Use(middleware.Auth(authService))
 	{
 		protected.GET("/auth/profile", authHandler.GetProfile)
+		serverGroup := protected.Group("/servers")
+		{
+			serverGroup.POST("", serverHandler.Create)
+			serverGroup.GET("", serverHandler.List)
+			serverGroup.GET("/:id", serverHandler.GetByID)
+			serverGroup.PUT("/:id", serverHandler.Update)
+			serverGroup.DELETE("/:id", serverHandler.Delete)
+		}
 	}
 
 	agentGroup := v1Group.Group("/agent")

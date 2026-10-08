@@ -17,9 +17,8 @@ type Client struct {
 	cfg      ServerConfig
 	identity IdentityConfig
 	executor *Executor
-
-	token   string
-	writeMu sync.Mutex
+	token    string
+	writeMu  sync.Mutex
 }
 
 func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, exec *Executor) *Client {
@@ -32,7 +31,6 @@ func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, exec *Executo
 
 func (c *Client) Start(ctx context.Context, token string) error {
 	token = strings.TrimSpace(token)
-
 	if token != "" {
 		if err := SaveToken(c.identity.Path, token); err != nil {
 			return err
@@ -44,7 +42,6 @@ func (c *Client) Start(ctx context.Context, token string) error {
 			return err
 		}
 	}
-
 	c.token = token
 
 	for {
@@ -78,26 +75,21 @@ func (c *Client) connectAndServe(ctx context.Context) error {
 		}
 		return fmt.Errorf("websocket 连接失败: %w", err)
 	}
-
 	defer conn.Close()
 
 	childCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	errCh := make(chan error, 2)
-
 	go func() {
 		errCh <- c.readLoop(ctx, conn)
 	}()
-
 	go func() {
 		errCh <- c.heartbeatLoop(childCtx, conn)
 	}()
-
 	err = <-errCh
 
 	cancel()
-
 	_ = conn.Close()
 
 	return err
@@ -129,7 +121,6 @@ func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id str
 	}
 
 	var reportOnce sync.Once
-
 	result := c.executor.Execute(ctx, payload, func(line string) {
 		if err := c.sendLog(conn, id, line); err != nil {
 			reportOnce.Do(func() {
@@ -139,7 +130,7 @@ func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id str
 		}
 	})
 
-	if err := c.sendResult(conn, id, *result); err != nil {
+	if err := c.sendResult(conn, id, result); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "执行结果发送失败 commandID=%s success=%t exitCode=%d error=%v\n", id, result.Success, result.ExitCode, err)
 		_ = conn.Close()
 	}
@@ -167,7 +158,7 @@ func (c *Client) sendAck(conn *websocket.Conn, id string, a protocol.Ack) error 
 func (c *Client) sendLog(conn *websocket.Conn, id string, line string) error {
 	return c.send(conn, id, protocol.TypeLog, protocol.Log{Content: line})
 }
-func (c *Client) sendResult(conn *websocket.Conn, id string, r protocol.Result) error {
+func (c *Client) sendResult(conn *websocket.Conn, id string, r *protocol.Result) error {
 	return c.send(conn, id, protocol.TypeResult, r)
 }
 
@@ -191,7 +182,6 @@ func (c *Client) send(conn *websocket.Conn, id string, msgType string, payload a
 	if err := conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		return fmt.Errorf("websocket 写超时设置失败: %w", err)
 	}
-
 	if err := conn.WriteJSON(env); err != nil {
 		return fmt.Errorf("websocket 消息发送失败: %w", err)
 	}

@@ -18,7 +18,7 @@ readonly CHARLES_PASS="${CHARLES_PASS:-charles666}"
 
 readonly DST_ROOT="$HOME/dst"
 readonly DST_BIN="$DST_ROOT/bin/dontstarve_dedicated_server_nullrenderer"
-readonly DST_BIN_64="$DST_ROOT/bin64/dontstarve_dedicated_server_nullrenderer_x64"
+# readonly DST_BIN_64="$DST_ROOT/bin64/dontstarve_dedicated_server_nullrenderer_x64"
 readonly STEAMCMD_DIR="$HOME/steamcmd"
 readonly STEAMCMD_TAR_URL="https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz"
 readonly DST_KLEI_DIR="$HOME/.klei/DoNotStarveTogether"

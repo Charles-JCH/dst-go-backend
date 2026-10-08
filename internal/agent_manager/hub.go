@@ -140,3 +140,14 @@ func (h *Hub) Count() int {
 
 	return len(h.conns)
 }
+
+func (h *Hub) Disconnect(serverID uint64) {
+	h.mu.Lock()
+	agent := h.conns[serverID]
+	delete(h.conns, serverID)
+	h.mu.Unlock()
+
+	if agent != nil {
+		h.closeAgent(serverID, agent)
+	}
+}

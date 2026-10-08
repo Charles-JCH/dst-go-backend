@@ -19,6 +19,7 @@ func InitRouter(
 	limiter redis.Limiter,
 	authService service.AuthService,
 	authHandler *v1.AuthHandler,
+	serverHandler *v1.ServerHandler,
 	agentHandler *agent_manager.Handler,
 ) *gin.Engine {
 	gin.SetMode(cfg.Mode)
@@ -45,7 +46,14 @@ func InitRouter(
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
 
 	// 注册路由
-	RegisterV1Routes(r, authService, authHandler, agentHandler, middleware.RateLimit(limiter, 100, time.Second))
+	RegisterV1Routes(
+		r,
+		authService,
+		authHandler,
+		serverHandler,
+		agentHandler,
+		middleware.RateLimit(limiter, 100, time.Second),
+	)
 
 	return r
 }

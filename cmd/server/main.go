@@ -12,6 +12,7 @@ func main() {
 	flag.StringVar(&configPath, "c", "config/config.yaml", "配置文件路径")
 	flag.Parse()
 
+	// 启动服务
 	if err := bootstrap.Run(configPath); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "server 运行失败: %v\n", err)
 		os.Exit(1)
