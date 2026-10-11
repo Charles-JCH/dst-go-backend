@@ -13,13 +13,11 @@ type ServerHandler struct {
 }
 
 func NewServerHandler(serverService service.ServerService) *ServerHandler {
-	return &ServerHandler{
-		serverService: serverService,
-	}
+	return &ServerHandler{serverService: serverService}
 }
 
 // Create 创建服务器
-// [POST] /api/v1/servers
+// [POST] /api/v1/server
 func (h *ServerHandler) Create(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
@@ -40,8 +38,8 @@ func (h *ServerHandler) Create(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// GetByID 获取服务器详情
-// [GET] /api/v1/servers/:id
+// GetByID 查看服务器
+// [GET] /api/v1/server/:id
 func (h *ServerHandler) GetByID(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
@@ -61,8 +59,8 @@ func (h *ServerHandler) GetByID(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// List 分页查询当前用户的服务器
-// [GET] /api/v1/servers?page=1&pageSize=20
+// List 分页查询
+// [GET] /api/v1/server?page=1&pageSize=20
 func (h *ServerHandler) List(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
@@ -83,8 +81,8 @@ func (h *ServerHandler) List(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// Update 更新服务器，密码为空时保留原密码
-// [PUT] /api/v1/servers/:id
+// Update 更新服务器
+// [PUT] /api/v1/server/:id
 func (h *ServerHandler) Update(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
@@ -110,7 +108,7 @@ func (h *ServerHandler) Update(c *gin.Context) {
 }
 
 // Delete 删除服务器
-// [DELETE] /api/v1/servers/:id
+// [DELETE] /api/v1/server/:id
 func (h *ServerHandler) Delete(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {

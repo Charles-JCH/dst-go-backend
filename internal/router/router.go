@@ -20,6 +20,7 @@ func InitRouter(
 	authService service.AuthService,
 	authHandler *v1.AuthHandler,
 	serverHandler *v1.ServerHandler,
+	dstHandler *v1.DstHandler,
 	agentHandler *agent_manager.Handler,
 ) *gin.Engine {
 	gin.SetMode(cfg.Mode)
@@ -51,6 +52,7 @@ func InitRouter(
 		authService,
 		authHandler,
 		serverHandler,
+		dstHandler,
 		agentHandler,
 		middleware.RateLimit(limiter, 100, time.Second),
 	)

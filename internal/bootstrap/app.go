@@ -86,6 +86,7 @@ func Run(configPath string) error {
 	// repository
 	userRepo := repository.NewUserRepository(sqlite)
 	serverRepo := repository.NewServerRepository(sqlite)
+	dstRepo := repository.NewDstRepository(sqlite)
 	txManager := repository.NewTransaction(sqlite)
 	authCache := cache.NewAuthCache(rdb)
 	smsCache := cache.NewSMSCache(rdb)
@@ -96,10 +97,12 @@ func Run(configPath string) error {
 	smsService := service.NewSMSService(captchaManager, smsCache, smsClient, smsLimit)
 	authService := service.NewAuthService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
 	serverService := service.NewServerService(serverRepo, encryptor, agentHub)
+	dstService := service.NewDstService(dstRepo, serverRepo)
 
 	// handler
 	authHandler := v1.NewAuthHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
 	serverHandler := v1.NewServerHandler(serverService)
+	dstHandler := v1.NewDstHandler(dstService)
 
 	// agent
 	agentAuth := agent_manager.NewAuth(jwtManager, serverRepo)
@@ -148,6 +151,7 @@ func Run(configPath string) error {
 		authService,
 		authHandler,
 		serverHandler,
+		dstHandler,
 		agentHandler,
 	)
 

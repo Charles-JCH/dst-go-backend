@@ -10,11 +10,13 @@ import (
 type ServerRepository interface {
 	ExistsByID(ctx context.Context, serverID uint64) (bool, error)
 	Create(ctx context.Context, server *entity.Server) error
-	GetByID(ctx context.Context, userID, serverID uint64) (*entity.Server, error)
-	List(ctx context.Context, userID uint64, page, pageSize int) ([]entity.Server, int64, error)
-	Update(ctx context.Context, userID, serverID uint64, updates map[string]any) error
-	Delete(ctx context.Context, userID, serverID uint64) error
+	GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error)
+	List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error)
+	Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error
+	Delete(ctx context.Context, userID uint64, serverID uint64) error
 }
+
+var ErrServerHasDst = errors.New("服务器仍有关联存档")
 
 type serverRepository struct {
 	db *gorm.DB
@@ -80,7 +82,7 @@ func (r *serverRepository) List(ctx context.Context, userID uint64, page int, pa
 	return servers, total, nil
 }
 
-func (r *serverRepository) Update(ctx context.Context, userID, serverID uint64, updates map[string]any) error {
+func (r *serverRepository) Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error {
 	result := r.getDB(ctx).
 		Model(&entity.Server{}).
 		Where("id = ? AND user_id = ?", serverID, userID).
@@ -101,15 +103,27 @@ func (r *serverRepository) Update(ctx context.Context, userID, serverID uint64, 
 	return nil
 }
 
-func (r *serverRepository) Delete(ctx context.Context, userID, serverID uint64) error {
-	result := r.getDB(ctx).
+func (r *serverRepository) Delete(ctx context.Context, userID uint64, serverID uint64) error {
+	db := r.getDB(ctx)
+	dsts := db.Model(&entity.Dst{}).
+		Select("1").
+		Where("server_id = ?", serverID)
+	result := db.
 		Where("id = ? AND user_id = ?", serverID, userID).
+		Where("NOT EXISTS (?)", dsts).
 		Delete(&entity.Server{})
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
+	if result.RowsAffected > 0 {
+		return nil
+	}
+	server, err := r.GetByID(ctx, userID, serverID)
+	if err != nil {
+		return err
+	}
+	if server == nil {
 		return gorm.ErrRecordNotFound
 	}
-	return nil
+	return ErrServerHasDst
 }

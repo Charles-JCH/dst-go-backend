@@ -421,6 +421,12 @@ func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPassw
 
 	// 更新密码
 	if err := s.userRepo.UpdatePassword(ctx, data.UserID, hashedPassword, data.TokenVersion); err != nil {
+		if errors.Is(err, repository.ErrTokenVersionConflict) {
+			return apperr.NewBizError(400, "密码重置凭证已失效，请重新验证短信")
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apperr.NewBizError(404, "用户不存在")
+		}
 		slog.ErrorContext(ctx, "用户密码更新失败", "userID", data.UserID, "error", err)
 		return apperr.NewBizError(500, "密码重置失败")
 	}

@@ -17,10 +17,10 @@ import (
 
 type ServerService interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error)
-	GetByID(ctx context.Context, userID, serverID uint64) (*response.ServerResp, error)
+	GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error)
 	List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error)
-	Update(ctx context.Context, userID, serverID uint64, req *request.UpdateServerReq) error
-	Delete(ctx context.Context, userID, serverID uint64) error
+	Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error
+	Delete(ctx context.Context, userID uint64, serverID uint64) error
 }
 
 type AgentDisconnecter interface {
@@ -80,11 +80,10 @@ func (s *serverService) Create(ctx context.Context, userID uint64, req *request.
 		slog.ErrorContext(ctx, "服务器创建失败", "userID", userID, "error", err)
 		return nil, apperr.NewBizError(500, "服务器创建失败")
 	}
-
 	return response.ToServerResp(server), nil
 }
 
-func (s *serverService) GetByID(ctx context.Context, userID, serverID uint64) (*response.ServerResp, error) {
+func (s *serverService) GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error) {
 	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
 	if err != nil {
 		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
@@ -117,7 +116,7 @@ func (s *serverService) List(ctx context.Context, userID uint64, req *request.Li
 	}, nil
 }
 
-func (s *serverService) Update(ctx context.Context, userID, serverID uint64, req *request.UpdateServerReq) error {
+func (s *serverService) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error {
 	name := strings.TrimSpace(req.Name)
 	username := strings.TrimSpace(req.Username)
 	if name == "" || username == "" {
@@ -158,8 +157,11 @@ func (s *serverService) Update(ctx context.Context, userID, serverID uint64, req
 	return nil
 }
 
-func (s *serverService) Delete(ctx context.Context, userID, serverID uint64) error {
+func (s *serverService) Delete(ctx context.Context, userID uint64, serverID uint64) error {
 	err := s.serverRepo.Delete(ctx, userID, serverID)
+	if errors.Is(err, repository.ErrServerHasDst) {
+		return apperr.NewBizError(409, "服务器下仍有存档，请先删除存档")
+	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return apperr.NewBizError(404, "服务器不存在")
 	}

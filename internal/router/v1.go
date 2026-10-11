@@ -13,6 +13,7 @@ func RegisterV1Routes(
 	authService service.AuthService,
 	authHandler *v1.AuthHandler,
 	serverHandler *v1.ServerHandler,
+	dstHandler *v1.DstHandler,
 	agentHandler *agent_manager.Handler,
 	rateLimit gin.HandlerFunc,
 ) {
@@ -36,13 +37,21 @@ func RegisterV1Routes(
 	protected.Use(middleware.Auth(authService))
 	{
 		protected.GET("/auth/profile", authHandler.GetProfile)
-		serverGroup := protected.Group("/servers")
+		serverGroup := protected.Group("/server")
 		{
 			serverGroup.POST("", serverHandler.Create)
 			serverGroup.GET("", serverHandler.List)
 			serverGroup.GET("/:id", serverHandler.GetByID)
 			serverGroup.PUT("/:id", serverHandler.Update)
 			serverGroup.DELETE("/:id", serverHandler.Delete)
+		}
+		dstGroup := protected.Group("/dst")
+		{
+			dstGroup.POST("", dstHandler.Create)
+			dstGroup.GET("", dstHandler.List)
+			dstGroup.GET("/:id", dstHandler.GetByID)
+			dstGroup.PUT("/:id", dstHandler.Update)
+			dstGroup.DELETE("/:id", dstHandler.Delete)
 		}
 	}
 

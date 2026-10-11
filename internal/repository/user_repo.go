@@ -17,6 +17,8 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error
 }
 
+var ErrTokenVersionConflict = errors.New("用户令牌版本已变更")
+
 type userRepository struct {
 	db *gorm.DB
 }
@@ -138,5 +140,5 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, pass
 	if user == nil {
 		return gorm.ErrRecordNotFound
 	}
-	return nil
+	return ErrTokenVersionConflict
 }
