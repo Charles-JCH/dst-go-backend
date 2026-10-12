@@ -1,4 +1,4 @@
-package service
+package sms
 
 import (
 	"context"
@@ -15,25 +15,25 @@ import (
 	"time"
 )
 
-type SMSService interface {
+type Service interface {
 	SendCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error
 	VerifyCode(ctx context.Context, phone, code string) (bool, error)
 }
 
-type smsService struct {
+type service struct {
 	captcha   captcha.Captcha
 	smsCache  cache.SMSCache
 	smsClient sms.Client
 	smsLimit  cache.SMSLimit
 }
 
-func NewSMSService(
+func NewService(
 	captcha captcha.Captcha,
 	smsCache cache.SMSCache,
 	smsClient sms.Client,
 	smsLimit cache.SMSLimit,
-) SMSService {
-	return &smsService{
+) Service {
+	return &service{
 		captcha:   captcha,
 		smsCache:  smsCache,
 		smsClient: smsClient,
@@ -41,7 +41,7 @@ func NewSMSService(
 	}
 }
 
-func (s *smsService) SendCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error {
+func (s *service) SendCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error {
 	if clientIP == "" {
 		return apperr.NewBizError(400, "客户端 ip 缺失")
 	}
@@ -116,7 +116,7 @@ func (s *smsService) SendCode(ctx context.Context, clientIP string, req *request
 	return nil
 }
 
-func (s *smsService) VerifyCode(ctx context.Context, phone, code string) (bool, error) {
+func (s *service) VerifyCode(ctx context.Context, phone, code string) (bool, error) {
 	// 限流
 	valid, err := s.smsCache.ConsumeCode(ctx, phone, code)
 	if errors.Is(err, cache.ErrSMSCodeAttemptsExceeded) {

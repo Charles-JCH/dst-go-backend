@@ -1,4 +1,4 @@
-package service
+package dst
 
 import (
 	"context"
@@ -8,13 +8,14 @@ import (
 	"game-panel/internal/model/entity"
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
-	"game-panel/internal/repository"
+	"game-panel/internal/repository/dst"
+	"game-panel/internal/repository/server"
 	"gorm.io/gorm"
 	"log/slog"
 	"strings"
 )
 
-type DstService interface {
+type Service interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateDstReq) (*response.DstResp, error)
 	GetByID(ctx context.Context, userID uint64, dstID uint64) (*response.DstResp, error)
 	List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error)
@@ -22,19 +23,19 @@ type DstService interface {
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
-type dstService struct {
-	dstRepo    repository.DstRepository
-	serverRepo repository.ServerRepository
+type service struct {
+	dstRepo    dst.Repository
+	serverRepo server.Repository
 }
 
-func NewDstService(dstRepo repository.DstRepository, serverRepo repository.ServerRepository) DstService {
-	return &dstService{
+func NewService(dstRepo dst.Repository, serverRepo server.Repository) Service {
+	return &service{
 		dstRepo:    dstRepo,
 		serverRepo: serverRepo,
 	}
 }
 
-func (s *dstService) Create(ctx context.Context, userID uint64, req *request.CreateDstReq) (*response.DstResp, error) {
+func (s *service) Create(ctx context.Context, userID uint64, req *request.CreateDstReq) (*response.DstResp, error) {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return nil, apperr.NewBizError(400, "存档名称为空")
@@ -81,7 +82,7 @@ func (s *dstService) Create(ctx context.Context, userID uint64, req *request.Cre
 	return response.ToDstResp(dst), nil
 }
 
-func (s *dstService) GetByID(ctx context.Context, userID uint64, dstID uint64) (*response.DstResp, error) {
+func (s *service) GetByID(ctx context.Context, userID uint64, dstID uint64) (*response.DstResp, error) {
 	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
 	if err != nil {
 		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
@@ -93,7 +94,7 @@ func (s *dstService) GetByID(ctx context.Context, userID uint64, dstID uint64) (
 	return response.ToDstResp(dst), nil
 }
 
-func (s *dstService) List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error) {
+func (s *service) List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error) {
 	if req.ServerID == 0 || req.Page < 1 || req.Page > 1000000 ||
 		req.PageSize < 1 || req.PageSize > 100 {
 		return nil, apperr.NewBizError(400, "查询参数无效")
@@ -126,7 +127,7 @@ func (s *dstService) List(ctx context.Context, userID uint64, req *request.ListD
 	}, nil
 }
 
-func (s *dstService) Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) error {
+func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) error {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return apperr.NewBizError(400, "存档名称为空")
@@ -169,7 +170,7 @@ func (s *dstService) Update(ctx context.Context, userID uint64, dstID uint64, re
 	return nil
 }
 
-func (s *dstService) Delete(ctx context.Context, userID uint64, dstID uint64) error {
+func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error {
 	err := s.dstRepo.Delete(ctx, userID, dstID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return apperr.NewBizError(404, "存档不存在")

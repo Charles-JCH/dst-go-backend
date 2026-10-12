@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"game-panel/internal/result"
-	"game-panel/internal/service"
+	"game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
 	"strings"
 )
 
 // Auth JWT 鉴权中间件
-func Auth(authService service.AuthService) gin.HandlerFunc {
+func Auth(authService auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

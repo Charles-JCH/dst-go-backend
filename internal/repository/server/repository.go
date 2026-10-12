@@ -1,13 +1,14 @@
-package repository
+package server
 
 import (
 	"context"
 	"errors"
 	"game-panel/internal/model/entity"
+	repo "game-panel/internal/repository"
 	"gorm.io/gorm"
 )
 
-type ServerRepository interface {
+type Repository interface {
 	ExistsByID(ctx context.Context, serverID uint64) (bool, error)
 	Create(ctx context.Context, server *entity.Server) error
 	GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error)
@@ -18,15 +19,15 @@ type ServerRepository interface {
 
 var ErrServerHasDst = errors.New("服务器仍有关联存档")
 
-type serverRepository struct {
+type repository struct {
 	db *gorm.DB
 }
 
-func NewServerRepository(db *gorm.DB) ServerRepository {
-	return &serverRepository{db: db}
+func NewRepository(db *gorm.DB) Repository {
+	return &repository{db: db}
 }
 
-func (r *serverRepository) ExistsByID(ctx context.Context, serverID uint64) (bool, error) {
+func (r *repository) ExistsByID(ctx context.Context, serverID uint64) (bool, error) {
 	var count int64
 	err := r.getDB(ctx).
 		Model(&entity.Server{}).
@@ -38,15 +39,15 @@ func (r *serverRepository) ExistsByID(ctx context.Context, serverID uint64) (boo
 	return count > 0, nil
 }
 
-func (r *serverRepository) getDB(ctx context.Context) *gorm.DB {
-	return GetDBFromCtx(ctx, r.db)
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }
 
-func (r *serverRepository) Create(ctx context.Context, server *entity.Server) error {
+func (r *repository) Create(ctx context.Context, server *entity.Server) error {
 	return r.getDB(ctx).Create(server).Error
 }
 
-func (r *serverRepository) GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error) {
+func (r *repository) GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error) {
 	var server entity.Server
 	err := r.getDB(ctx).
 		Where("id = ? AND user_id = ?", serverID, userID).
@@ -60,7 +61,7 @@ func (r *serverRepository) GetByID(ctx context.Context, userID uint64, serverID 
 	return &server, nil
 }
 
-func (r *serverRepository) List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error) {
+func (r *repository) List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error) {
 	var total int64
 	err := r.getDB(ctx).
 		Model(&entity.Server{}).
@@ -82,7 +83,7 @@ func (r *serverRepository) List(ctx context.Context, userID uint64, page int, pa
 	return servers, total, nil
 }
 
-func (r *serverRepository) Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error {
+func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error {
 	result := r.getDB(ctx).
 		Model(&entity.Server{}).
 		Where("id = ? AND user_id = ?", serverID, userID).
@@ -103,7 +104,7 @@ func (r *serverRepository) Update(ctx context.Context, userID uint64, serverID u
 	return nil
 }
 
-func (r *serverRepository) Delete(ctx context.Context, userID uint64, serverID uint64) error {
+func (r *repository) Delete(ctx context.Context, userID uint64, serverID uint64) error {
 	db := r.getDB(ctx)
 	dsts := db.Model(&entity.Dst{}).
 		Select("1").

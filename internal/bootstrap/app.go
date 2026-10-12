@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"game-panel/internal/agent_manager"
 	"game-panel/internal/config"
-	"game-panel/internal/handler/v1"
+	authhandler "game-panel/internal/handler/v1/auth"
+	dsthandler "game-panel/internal/handler/v1/dst"
+	serverhandler "game-panel/internal/handler/v1/server"
 	"game-panel/internal/platform/captcha"
 	"game-panel/internal/platform/crypto"
 	"game-panel/internal/platform/jwt"
@@ -13,8 +15,15 @@ import (
 	"game-panel/internal/protocol"
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
+	dstrepo "game-panel/internal/repository/dst"
+	serverrepo "game-panel/internal/repository/server"
+	"game-panel/internal/repository/user"
 	"game-panel/internal/router"
-	"game-panel/internal/service"
+	authservice "game-panel/internal/service/auth"
+	captchaservice "game-panel/internal/service/captcha"
+	dstservice "game-panel/internal/service/dst"
+	serverservice "game-panel/internal/service/server"
+	smsservice "game-panel/internal/service/sms"
 	"log/slog"
 )
 
@@ -84,25 +93,25 @@ func Run(configPath string) error {
 	}
 
 	// repository
-	userRepo := repository.NewUserRepository(sqlite)
-	serverRepo := repository.NewServerRepository(sqlite)
-	dstRepo := repository.NewDstRepository(sqlite)
+	userRepo := user.NewRepository(sqlite)
+	serverRepo := serverrepo.NewRepository(sqlite)
+	dstRepo := dstrepo.NewRepository(sqlite)
 	txManager := repository.NewTransaction(sqlite)
 	authCache := cache.NewAuthCache(rdb)
 	smsCache := cache.NewSMSCache(rdb)
 	smsLimit := cache.NewSMSLimit(rdb)
 
 	// service
-	captchaService := service.NewCaptchaService(captchaManager)
-	smsService := service.NewSMSService(captchaManager, smsCache, smsClient, smsLimit)
-	authService := service.NewAuthService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
-	serverService := service.NewServerService(serverRepo, encryptor, agentHub)
-	dstService := service.NewDstService(dstRepo, serverRepo)
+	captchaService := captchaservice.NewService(captchaManager)
+	smsService := smsservice.NewService(captchaManager, smsCache, smsClient, smsLimit)
+	authService := authservice.NewService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
+	serverService := serverservice.NewService(serverRepo, encryptor, agentHub)
+	dstService := dstservice.NewService(dstRepo, serverRepo)
 
 	// handler
-	authHandler := v1.NewAuthHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
-	serverHandler := v1.NewServerHandler(serverService)
-	dstHandler := v1.NewDstHandler(dstService)
+	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
+	serverHandler := serverhandler.NewHandler(serverService)
+	dstHandler := dsthandler.NewHandler(dstService)
 
 	// agent
 	agentAuth := agent_manager.NewAuth(jwtManager, serverRepo)

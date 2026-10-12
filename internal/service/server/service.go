@@ -1,4 +1,4 @@
-package service
+package server
 
 import (
 	"context"
@@ -8,14 +8,14 @@ import (
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
-	"game-panel/internal/repository"
+	"game-panel/internal/repository/server"
 	"gorm.io/gorm"
 	"log/slog"
 	"net/netip"
 	"strings"
 )
 
-type ServerService interface {
+type Service interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error)
 	GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error)
 	List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error)
@@ -23,25 +23,25 @@ type ServerService interface {
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
 }
 
-type AgentDisconnecter interface {
+type AgentHub interface {
 	Disconnect(serverID uint64)
 }
 
-type serverService struct {
-	serverRepo repository.ServerRepository
+type service struct {
+	serverRepo server.Repository
 	encryptor  crypto.Encryptor
-	agent      AgentDisconnecter
+	agent      AgentHub
 }
 
-func NewServerService(serverRepo repository.ServerRepository, encryptor crypto.Encryptor, agent AgentDisconnecter) ServerService {
-	return &serverService{
+func NewService(serverRepo server.Repository, encryptor crypto.Encryptor, agent AgentHub) Service {
+	return &service{
 		serverRepo: serverRepo,
 		encryptor:  encryptor,
 		agent:      agent,
 	}
 }
 
-func (s *serverService) Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error) {
+func (s *service) Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error) {
 	name := strings.TrimSpace(req.Name)
 	username := strings.TrimSpace(req.Username)
 	if name == "" || username == "" {
@@ -83,7 +83,7 @@ func (s *serverService) Create(ctx context.Context, userID uint64, req *request.
 	return response.ToServerResp(server), nil
 }
 
-func (s *serverService) GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error) {
+func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error) {
 	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
 	if err != nil {
 		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
@@ -95,7 +95,7 @@ func (s *serverService) GetByID(ctx context.Context, userID uint64, serverID uin
 	return response.ToServerResp(server), nil
 }
 
-func (s *serverService) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
+func (s *service) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
 	if req.Page < 1 || req.Page > 1000000 || req.PageSize < 1 || req.PageSize > 100 {
 		return nil, apperr.NewBizError(400, "分页参数无效")
 	}
@@ -116,7 +116,7 @@ func (s *serverService) List(ctx context.Context, userID uint64, req *request.Li
 	}, nil
 }
 
-func (s *serverService) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error {
+func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error {
 	name := strings.TrimSpace(req.Name)
 	username := strings.TrimSpace(req.Username)
 	if name == "" || username == "" {
@@ -157,9 +157,9 @@ func (s *serverService) Update(ctx context.Context, userID uint64, serverID uint
 	return nil
 }
 
-func (s *serverService) Delete(ctx context.Context, userID uint64, serverID uint64) error {
+func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) error {
 	err := s.serverRepo.Delete(ctx, userID, serverID)
-	if errors.Is(err, repository.ErrServerHasDst) {
+	if errors.Is(err, server.ErrServerHasDst) {
 		return apperr.NewBizError(409, "服务器下仍有存档，请先删除存档")
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {

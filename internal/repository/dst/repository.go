@@ -1,13 +1,14 @@
-package repository
+package dst
 
 import (
 	"context"
 	"errors"
 	"game-panel/internal/model/entity"
+	repo "game-panel/internal/repository"
 	"gorm.io/gorm"
 )
 
-type DstRepository interface {
+type Repository interface {
 	Create(ctx context.Context, dst *entity.Dst) error
 	GetByID(ctx context.Context, userID uint64, dstID uint64) (*entity.Dst, error)
 	List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error)
@@ -15,23 +16,23 @@ type DstRepository interface {
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
-type dstRepository struct {
+type repository struct {
 	db *gorm.DB
 }
 
-func NewDstRepository(db *gorm.DB) DstRepository {
-	return &dstRepository{db: db}
+func NewRepository(db *gorm.DB) Repository {
+	return &repository{db: db}
 }
 
-func (r *dstRepository) getDB(ctx context.Context) *gorm.DB {
-	return GetDBFromCtx(ctx, r.db)
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }
 
-func (r *dstRepository) Create(ctx context.Context, dst *entity.Dst) error {
+func (r *repository) Create(ctx context.Context, dst *entity.Dst) error {
 	return r.getDB(ctx).Create(dst).Error
 }
 
-func (r *dstRepository) GetByID(ctx context.Context, userID uint64, dstID uint64) (*entity.Dst, error) {
+func (r *repository) GetByID(ctx context.Context, userID uint64, dstID uint64) (*entity.Dst, error) {
 	var dst entity.Dst
 	err := r.getDB(ctx).
 		Where("id = ? AND user_id = ?", dstID, userID).
@@ -45,7 +46,7 @@ func (r *dstRepository) GetByID(ctx context.Context, userID uint64, dstID uint64
 	return &dst, nil
 }
 
-func (r *dstRepository) List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error) {
+func (r *repository) List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error) {
 	var total int64
 	err := r.getDB(ctx).
 		Model(&entity.Dst{}).
@@ -67,7 +68,7 @@ func (r *dstRepository) List(ctx context.Context, userID uint64, serverID uint64
 	return dsts, total, nil
 }
 
-func (r *dstRepository) Update(ctx context.Context, userID uint64, dstID uint64, updates map[string]any) error {
+func (r *repository) Update(ctx context.Context, userID uint64, dstID uint64, updates map[string]any) error {
 	result := r.getDB(ctx).
 		Model(&entity.Dst{}).
 		Where("id = ? AND user_id = ?", dstID, userID).
@@ -88,7 +89,7 @@ func (r *dstRepository) Update(ctx context.Context, userID uint64, dstID uint64,
 	return nil
 }
 
-func (r *dstRepository) Delete(ctx context.Context, userID uint64, dstID uint64) error {
+func (r *repository) Delete(ctx context.Context, userID uint64, dstID uint64) error {
 	result := r.getDB(ctx).
 		Where("id = ? AND user_id = ?", dstID, userID).
 		Delete(&entity.Dst{})

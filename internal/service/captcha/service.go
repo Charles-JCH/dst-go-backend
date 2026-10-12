@@ -1,4 +1,4 @@
-package service
+package captcha
 
 import (
 	"context"
@@ -8,21 +8,21 @@ import (
 	"log/slog"
 )
 
-type CaptchaService interface {
+type Service interface {
 	GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error)
 	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
 }
 
-type captchaService struct {
+type service struct {
 	captcha captcha.Captcha
 }
 
-func NewCaptchaService(cp captcha.Captcha) CaptchaService {
-	return &captchaService{captcha: cp}
+func NewService(cp captcha.Captcha) Service {
+	return &service{captcha: cp}
 }
 
 // GenerateCaptcha 获取图形验证码
-func (s *captchaService) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error) {
+func (s *service) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error) {
 	id, b64s, err := s.captcha.Generate()
 	if err != nil {
 		slog.ErrorContext(ctx, "图形验证码生成失败", "error", err)
@@ -34,6 +34,6 @@ func (s *captchaService) GenerateCaptcha(ctx context.Context) (*response.GetCapt
 	}, nil
 }
 
-func (s *captchaService) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
+func (s *service) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
 	return s.captcha.Verify(ctx, id, answer, clear)
 }

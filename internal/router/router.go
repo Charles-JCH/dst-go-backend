@@ -3,10 +3,12 @@ package router
 import (
 	"game-panel/internal/agent_manager"
 	"game-panel/internal/config"
-	"game-panel/internal/handler/v1"
+	authhandler "game-panel/internal/handler/v1/auth"
+	"game-panel/internal/handler/v1/dst"
+	"game-panel/internal/handler/v1/server"
 	"game-panel/internal/middleware"
 	"game-panel/internal/platform/redis"
-	"game-panel/internal/service"
+	authservice "game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -17,10 +19,10 @@ import (
 func InitRouter(
 	cfg config.ServerConfig,
 	limiter redis.Limiter,
-	authService service.AuthService,
-	authHandler *v1.AuthHandler,
-	serverHandler *v1.ServerHandler,
-	dstHandler *v1.DstHandler,
+	authService authservice.Service,
+	authHandler *authhandler.Handler,
+	serverHandler *server.Handler,
+	dstHandler *dst.Handler,
 	agentHandler *agent_manager.Handler,
 ) *gin.Engine {
 	gin.SetMode(cfg.Mode)

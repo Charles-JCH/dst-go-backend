@@ -1,24 +1,24 @@
-package v1
+package server
 
 import (
 	"game-panel/internal/model/request"
 	"game-panel/internal/result"
-	"game-panel/internal/service"
+	"game-panel/internal/service/server"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )
 
-type ServerHandler struct {
-	serverService service.ServerService
+type Handler struct {
+	serverService server.Service
 }
 
-func NewServerHandler(serverService service.ServerService) *ServerHandler {
-	return &ServerHandler{serverService: serverService}
+func NewHandler(serverService server.Service) *Handler {
+	return &Handler{serverService: serverService}
 }
 
 // Create 创建服务器
 // [POST] /api/v1/server
-func (h *ServerHandler) Create(c *gin.Context) {
+func (h *Handler) Create(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
 		return
@@ -40,7 +40,7 @@ func (h *ServerHandler) Create(c *gin.Context) {
 
 // GetByID 查看服务器
 // [GET] /api/v1/server/:id
-func (h *ServerHandler) GetByID(c *gin.Context) {
+func (h *Handler) GetByID(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
 		return
@@ -61,7 +61,7 @@ func (h *ServerHandler) GetByID(c *gin.Context) {
 
 // List 分页查询
 // [GET] /api/v1/server?page=1&pageSize=20
-func (h *ServerHandler) List(c *gin.Context) {
+func (h *Handler) List(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
 		return
@@ -83,7 +83,7 @@ func (h *ServerHandler) List(c *gin.Context) {
 
 // Update 更新服务器
 // [PUT] /api/v1/server/:id
-func (h *ServerHandler) Update(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
 		return
@@ -109,7 +109,7 @@ func (h *ServerHandler) Update(c *gin.Context) {
 
 // Delete 删除服务器
 // [DELETE] /api/v1/server/:id
-func (h *ServerHandler) Delete(c *gin.Context) {
+func (h *Handler) Delete(c *gin.Context) {
 	userID, ok := h.getUserID(c)
 	if !ok {
 		return
@@ -127,7 +127,7 @@ func (h *ServerHandler) Delete(c *gin.Context) {
 	result.Success(c, nil)
 }
 
-func (h *ServerHandler) getUserID(c *gin.Context) (uint64, bool) {
+func (h *Handler) getUserID(c *gin.Context) (uint64, bool) {
 	value, exists := c.Get("userID")
 	if !exists {
 		result.FailWithMsg(c, 401, "未授权")
@@ -142,7 +142,7 @@ func (h *ServerHandler) getUserID(c *gin.Context) (uint64, bool) {
 	return userID, true
 }
 
-func (h *ServerHandler) getServerID(c *gin.Context) (uint64, bool) {
+func (h *Handler) getServerID(c *gin.Context) (uint64, bool) {
 	serverID, err := strconv.ParseUint(c.Param("id"), 10, 63)
 	if err != nil || serverID == 0 {
 		result.FailWithMsg(c, 400, "服务器ID无效")

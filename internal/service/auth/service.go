@@ -1,4 +1,4 @@
-package service
+package auth
 
 import (
 	"context"
@@ -11,6 +11,9 @@ import (
 	"game-panel/internal/platform/jwt"
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
+	userrepo "game-panel/internal/repository/user"
+	"game-panel/internal/service/captcha"
+	"game-panel/internal/service/sms"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"log/slog"
@@ -23,7 +26,7 @@ type Identity struct {
 	Role     string
 }
 
-type AuthService interface {
+type Service interface {
 	Authenticate(ctx context.Context, accessToken string) (*Identity, error)
 	GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error)
 	SendSMSCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error
@@ -37,26 +40,26 @@ type AuthService interface {
 	GetProfile(ctx context.Context, userID uint64) (*response.UserResp, error)
 }
 
-type authService struct {
-	captchaService CaptchaService
-	smsService     SMSService
+type service struct {
+	captchaService captcha.Service
+	smsService     sms.Service
 	jwtManager     jwt.TokenManager
 	authCache      cache.AuthCache
-	userRepo       repository.UserRepository
+	userRepo       userrepo.Repository
 	tx             repository.Transaction
 	hasher         crypto.PasswordHasher
 }
 
-func NewAuthService(
-	captchaService CaptchaService,
-	smsService SMSService,
+func NewService(
+	captchaService captcha.Service,
+	smsService sms.Service,
 	jwtManager jwt.TokenManager,
 	authCache cache.AuthCache,
-	userRepo repository.UserRepository,
+	userRepo userrepo.Repository,
 	tx repository.Transaction,
 	hasher crypto.PasswordHasher,
-) AuthService {
-	return &authService{
+) Service {
+	return &service{
 		captchaService: captchaService,
 		smsService:     smsService,
 		jwtManager:     jwtManager,
@@ -67,7 +70,7 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) Authenticate(ctx context.Context, accessToken string) (*Identity, error) {
+func (s *service) Authenticate(ctx context.Context, accessToken string) (*Identity, error) {
 	if accessToken == "" {
 		return nil, apperr.NewBizError(401, "登录凭证缺失")
 	}
@@ -107,17 +110,17 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (*Id
 }
 
 // GenerateCaptcha 获取图形验证码
-func (s *authService) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error) {
+func (s *service) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error) {
 	return s.captchaService.GenerateCaptcha(ctx)
 }
 
 // SendSMSCode 发送短信验证码
-func (s *authService) SendSMSCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error {
+func (s *service) SendSMSCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error {
 	return s.smsService.SendCode(ctx, clientIP, req)
 }
 
 // Register 用户账号注册
-func (s *authService) Register(ctx context.Context, req *request.RegisterReq) (*response.LoginResp, string, error) {
+func (s *service) Register(ctx context.Context, req *request.RegisterReq) (*response.LoginResp, string, error) {
 	// 用户名是否已注册
 	existUser, err := s.userRepo.GetByUsername(ctx, req.Username)
 	if err != nil {
@@ -186,7 +189,7 @@ func (s *authService) Register(ctx context.Context, req *request.RegisterReq) (*
 }
 
 // Login 用户登录逻辑
-func (s *authService) Login(ctx context.Context, req *request.LoginReq) (*response.LoginResp, string, error) {
+func (s *service) Login(ctx context.Context, req *request.LoginReq) (*response.LoginResp, string, error) {
 	// 校验图形验证码
 	valid, err := s.captchaService.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
 	if err != nil {
@@ -229,7 +232,7 @@ func (s *authService) Login(ctx context.Context, req *request.LoginReq) (*respon
 	return &response.LoginResp{AccessToken: accessToken, UserID: user.ID, Username: user.Username, Role: user.Role}, refreshToken, nil
 }
 
-func (s *authService) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (*response.LoginResp, string, error) {
+func (s *service) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (*response.LoginResp, string, error) {
 	// 校验短信验证码
 	valid, err := s.smsService.VerifyCode(ctx, req.Phone, req.SMSCode)
 	if err != nil {
@@ -269,7 +272,7 @@ func (s *authService) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq
 }
 
 // RefreshToken 刷新 AccessToken、RefreshToken
-func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
+func (s *service) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
 	if refreshToken == "" {
 		return "", "", apperr.NewBizError(401, "刷新凭证缺失")
 	}
@@ -332,7 +335,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (st
 }
 
 // Logout 登出
-func (s *authService) Logout(ctx context.Context, accessToken string, refreshToken string) error {
+func (s *service) Logout(ctx context.Context, accessToken string, refreshToken string) error {
 	if err := s.revokeToken(ctx, refreshToken, true); err != nil {
 		slog.ErrorContext(ctx, "刷新凭证注销失败", "error", err)
 		return apperr.NewBizError(503, "退出登录失败")
@@ -344,7 +347,7 @@ func (s *authService) Logout(ctx context.Context, accessToken string, refreshTok
 	return nil
 }
 
-func (s *authService) revokeToken(ctx context.Context, token string, isRefresh bool) error {
+func (s *service) revokeToken(ctx context.Context, token string, isRefresh bool) error {
 	if token == "" {
 		return nil
 	}
@@ -363,7 +366,7 @@ func (s *authService) revokeToken(ctx context.Context, token string, isRefresh b
 }
 
 // VerifyResetCode 重置密码第一步
-func (s *authService) VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error) {
+func (s *service) VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error) {
 	valid, err := s.smsService.VerifyCode(ctx, req.Phone, req.SMSCode)
 	if err != nil {
 		return "", err
@@ -393,7 +396,7 @@ func (s *authService) VerifyResetCode(ctx context.Context, req *request.VerifyRe
 }
 
 // ResetPassword 重置密码第二步
-func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error {
+func (s *service) ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error {
 	data, err := s.authCache.GetResetToken(ctx, req.ResetToken)
 	if err != nil {
 		slog.ErrorContext(ctx, "密码重置凭证读取失败", "error", err)
@@ -421,7 +424,7 @@ func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPassw
 
 	// 更新密码
 	if err := s.userRepo.UpdatePassword(ctx, data.UserID, hashedPassword, data.TokenVersion); err != nil {
-		if errors.Is(err, repository.ErrTokenVersionConflict) {
+		if errors.Is(err, userrepo.ErrTokenVersionConflict) {
 			return apperr.NewBizError(400, "密码重置凭证已失效，请重新验证短信")
 		}
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -441,7 +444,7 @@ func (s *authService) ResetPassword(ctx context.Context, req *request.ResetPassw
 }
 
 // GetProfile 获取当前登录用户的基本信息
-func (s *authService) GetProfile(ctx context.Context, userID uint64) (*response.UserResp, error) {
+func (s *service) GetProfile(ctx context.Context, userID uint64) (*response.UserResp, error) {
 	if userID == 0 {
 		return nil, apperr.NewBizError(401, "用户标识无效")
 	}

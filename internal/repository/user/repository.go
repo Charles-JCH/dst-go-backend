@@ -1,13 +1,14 @@
-package repository
+package user
 
 import (
 	"context"
 	"errors"
 	"game-panel/internal/model/entity"
+	repo "game-panel/internal/repository"
 	"gorm.io/gorm"
 )
 
-type UserRepository interface {
+type Repository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByID(ctx context.Context, userID uint64) (*entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
@@ -19,25 +20,25 @@ type UserRepository interface {
 
 var ErrTokenVersionConflict = errors.New("用户令牌版本已变更")
 
-type userRepository struct {
+type repository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
-	return &userRepository{db: db}
+func NewRepository(db *gorm.DB) Repository {
+	return &repository{db: db}
 }
 
-func (r *userRepository) getDB(ctx context.Context) *gorm.DB {
-	return GetDBFromCtx(ctx, r.db)
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }
 
 // Create 创建新用户
-func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
+func (r *repository) Create(ctx context.Context, user *entity.User) error {
 	return r.getDB(ctx).Create(user).Error
 }
 
 // GetByID 根据用户 ID 查询
-func (r *userRepository) GetByID(ctx context.Context, userID uint64) (*entity.User, error) {
+func (r *repository) GetByID(ctx context.Context, userID uint64) (*entity.User, error) {
 	var user entity.User
 	err := r.getDB(ctx).
 		Where("id = ?", userID).
@@ -52,7 +53,7 @@ func (r *userRepository) GetByID(ctx context.Context, userID uint64) (*entity.Us
 }
 
 // GetByUsername 根据用户名查询
-func (r *userRepository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
+func (r *repository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
 	var user entity.User
 	err := r.getDB(ctx).
 		Where("username = ?", username).
@@ -67,7 +68,7 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*e
 }
 
 // GetByPhone 根据手机号查询
-func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
+func (r *repository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
 	var user entity.User
 	err := r.getDB(ctx).
 		Where("phone = ?", phone).
@@ -82,7 +83,7 @@ func (r *userRepository) GetByPhone(ctx context.Context, phone string) (*entity.
 }
 
 // GetByEmail 根据邮箱查询
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+func (r *repository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user entity.User
 	err := r.getDB(ctx).
 		Where("email = ?", email).
@@ -97,7 +98,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 }
 
 // Update 更新用户名
-func (r *userRepository) Update(ctx context.Context, userID uint64, username string) error {
+func (r *repository) Update(ctx context.Context, userID uint64, username string) error {
 	result := r.getDB(ctx).
 		Model(&entity.User{}).
 		Where("id = ?", userID).
@@ -119,7 +120,7 @@ func (r *userRepository) Update(ctx context.Context, userID uint64, username str
 }
 
 // UpdatePassword 更新用户密码并递增令牌版本
-func (r *userRepository) UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error {
+func (r *repository) UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error {
 	result := r.getDB(ctx).
 		Model(&entity.User{}).
 		Where("id = ? AND token_version = ?", userID, tokenVersion).
