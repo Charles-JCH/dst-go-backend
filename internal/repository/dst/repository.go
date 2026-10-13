@@ -47,22 +47,19 @@ func (r *repository) GetByID(ctx context.Context, userID uint64, dstID uint64) (
 }
 
 func (r *repository) List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error) {
-	var total int64
-	err := r.getDB(ctx).
+	db := r.getDB(ctx).
 		Model(&entity.Dst{}).
-		Where("user_id = ? AND server_id = ?", userID, serverID).
-		Count(&total).Error
-	if err != nil {
+		Where("user_id = ? AND server_id = ?", userID, serverID)
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	dsts := make([]entity.Dst, 0)
-	err = r.getDB(ctx).
-		Where("user_id = ? AND server_id = ?", userID, serverID).
+	var dsts []entity.Dst
+	if err := db.
 		Order("slot ASC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Find(&dsts).Error
-	if err != nil {
+		Find(&dsts).Error; err != nil {
 		return nil, 0, err
 	}
 	return dsts, total, nil

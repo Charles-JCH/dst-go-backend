@@ -62,25 +62,20 @@ func (r *repository) GetByID(ctx context.Context, userID uint64, serverID uint64
 }
 
 func (r *repository) List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error) {
-	var total int64
-	err := r.getDB(ctx).
+	db := r.getDB(ctx).
 		Model(&entity.Server{}).
-		Where("user_id = ?", userID).
-		Count(&total).Error
-	if err != nil {
+		Where("user_id = ?", userID)
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	servers := make([]entity.Server, 0)
-	err = r.getDB(ctx).
-		Where("user_id = ?", userID).
+	var servers []entity.Server
+	err := db.
 		Order("id DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&servers).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	return servers, total, nil
+	return servers, total, err
 }
 
 func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error {

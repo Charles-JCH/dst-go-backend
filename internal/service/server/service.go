@@ -8,7 +8,9 @@ import (
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
+	"game-panel/internal/repository"
 	"game-panel/internal/repository/server"
+	"game-panel/internal/repository/task"
 	"gorm.io/gorm"
 	"log/slog"
 	"net/netip"
@@ -29,13 +31,17 @@ type AgentHub interface {
 
 type service struct {
 	serverRepo server.Repository
+	taskRepo   task.Repository
+	txManager  repository.Transaction
 	encryptor  crypto.Encryptor
 	agent      AgentHub
 }
 
-func NewService(serverRepo server.Repository, encryptor crypto.Encryptor, agent AgentHub) Service {
+func NewService(serverRepo server.Repository, taskRepo task.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, agent AgentHub) Service {
 	return &service{
 		serverRepo: serverRepo,
+		taskRepo:   taskRepo,
+		txManager:  txManager,
 		encryptor:  encryptor,
 		agent:      agent,
 	}
@@ -72,7 +78,22 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 	}
 
 	// 创建服务器
-	err = s.serverRepo.Create(ctx, server)
+	err = s.txManager.ExecTx(ctx, func(txCtx context.Context) error {
+		if err := s.serverRepo.Create(txCtx, server); err != nil {
+			return err
+		}
+		task := &entity.Task{
+			Name:         "部署服务器 Agent",
+			Type:         entity.TaskTypeAgentDeploy,
+			Status:       entity.TaskStatusPending,
+			Stage:        "queued",
+			ResourceType: entity.TaskResourceServer,
+			ResourceID:   server.ID,
+			UserID:       userID,
+		}
+
+		return s.taskRepo.Create(txCtx, task)
+	})
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return nil, apperr.NewBizError(409, "该IP和SSH端口的服务器已存在")
 	}
@@ -96,7 +117,8 @@ func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
-	if req.Page < 1 || req.Page > 1000000 || req.PageSize < 1 || req.PageSize > 100 {
+	if req.Page < 1 || req.Page > 1000000 ||
+		req.PageSize < 1 || req.PageSize > 100 {
 		return nil, apperr.NewBizError(400, "分页参数无效")
 	}
 	servers, total, err := s.serverRepo.List(ctx, userID, req.Page, req.PageSize)

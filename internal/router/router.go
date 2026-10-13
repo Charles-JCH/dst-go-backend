@@ -6,6 +6,7 @@ import (
 	authhandler "game-panel/internal/handler/v1/auth"
 	"game-panel/internal/handler/v1/dst"
 	"game-panel/internal/handler/v1/server"
+	"game-panel/internal/handler/v1/task"
 	"game-panel/internal/middleware"
 	"game-panel/internal/platform/redis"
 	authservice "game-panel/internal/service/auth"
@@ -23,6 +24,7 @@ func InitRouter(
 	authHandler *authhandler.Handler,
 	serverHandler *server.Handler,
 	dstHandler *dst.Handler,
+	taskHandler *task.Handler,
 	agentHandler *agent_manager.Handler,
 ) *gin.Engine {
 	gin.SetMode(cfg.Mode)
@@ -55,6 +57,7 @@ func InitRouter(
 		authHandler,
 		serverHandler,
 		dstHandler,
+		taskHandler,
 		agentHandler,
 		middleware.RateLimit(limiter, 100, time.Second),
 	)

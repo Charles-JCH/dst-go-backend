@@ -5,6 +5,7 @@ import (
 	authhandler "game-panel/internal/handler/v1/auth"
 	"game-panel/internal/handler/v1/dst"
 	"game-panel/internal/handler/v1/server"
+	"game-panel/internal/handler/v1/task"
 	"game-panel/internal/middleware"
 	authservice "game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ func RegisterV1Routes(
 	authHandler *authhandler.Handler,
 	serverHandler *server.Handler,
 	dstHandler *dst.Handler,
+	taskHandler *task.Handler,
 	agentHandler *agent_manager.Handler,
 	rateLimit gin.HandlerFunc,
 ) {
@@ -54,6 +56,11 @@ func RegisterV1Routes(
 			dstGroup.GET("/:id", dstHandler.GetByID)
 			dstGroup.PUT("/:id", dstHandler.Update)
 			dstGroup.DELETE("/:id", dstHandler.Delete)
+		}
+		taskGroup := protected.Group("/tasks")
+		{
+			taskGroup.GET("", taskHandler.List)
+			taskGroup.GET("/:id", taskHandler.GetByID)
 		}
 	}
 

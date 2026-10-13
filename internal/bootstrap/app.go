@@ -7,6 +7,7 @@ import (
 	authhandler "game-panel/internal/handler/v1/auth"
 	dsthandler "game-panel/internal/handler/v1/dst"
 	serverhandler "game-panel/internal/handler/v1/server"
+	taskhandler "game-panel/internal/handler/v1/task"
 	"game-panel/internal/platform/captcha"
 	"game-panel/internal/platform/crypto"
 	"game-panel/internal/platform/jwt"
@@ -17,6 +18,7 @@ import (
 	"game-panel/internal/repository/cache"
 	dstrepo "game-panel/internal/repository/dst"
 	serverrepo "game-panel/internal/repository/server"
+	taskrepo "game-panel/internal/repository/task"
 	"game-panel/internal/repository/user"
 	"game-panel/internal/router"
 	authservice "game-panel/internal/service/auth"
@@ -24,6 +26,7 @@ import (
 	dstservice "game-panel/internal/service/dst"
 	serverservice "game-panel/internal/service/server"
 	smsservice "game-panel/internal/service/sms"
+	taskservice "game-panel/internal/service/task"
 	"log/slog"
 )
 
@@ -96,6 +99,7 @@ func Run(configPath string) error {
 	userRepo := user.NewRepository(sqlite)
 	serverRepo := serverrepo.NewRepository(sqlite)
 	dstRepo := dstrepo.NewRepository(sqlite)
+	taskRepo := taskrepo.NewRepository(sqlite)
 	txManager := repository.NewTransaction(sqlite)
 	authCache := cache.NewAuthCache(rdb)
 	smsCache := cache.NewSMSCache(rdb)
@@ -105,13 +109,15 @@ func Run(configPath string) error {
 	captchaService := captchaservice.NewService(captchaManager)
 	smsService := smsservice.NewService(captchaManager, smsCache, smsClient, smsLimit)
 	authService := authservice.NewService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
-	serverService := serverservice.NewService(serverRepo, encryptor, agentHub)
+	serverService := serverservice.NewService(serverRepo, taskRepo, txManager, encryptor, agentHub)
 	dstService := dstservice.NewService(dstRepo, serverRepo)
+	taskService := taskservice.NewService(taskRepo)
 
 	// handler
 	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
 	serverHandler := serverhandler.NewHandler(serverService)
 	dstHandler := dsthandler.NewHandler(dstService)
+	taskHandler := taskhandler.NewHandler(taskService)
 
 	// agent
 	agentAuth := agent_manager.NewAuth(jwtManager, serverRepo)
@@ -161,6 +167,7 @@ func Run(configPath string) error {
 		authHandler,
 		serverHandler,
 		dstHandler,
+		taskHandler,
 		agentHandler,
 	)
 

@@ -95,7 +95,8 @@ func (s *service) GetByID(ctx context.Context, userID uint64, dstID uint64) (*re
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error) {
-	if req.ServerID == 0 || req.Page < 1 || req.Page > 1000000 ||
+	if req.ServerID == 0 ||
+		req.Page < 1 || req.Page > 1000000 ||
 		req.PageSize < 1 || req.PageSize > 100 {
 		return nil, apperr.NewBizError(400, "查询参数无效")
 	}

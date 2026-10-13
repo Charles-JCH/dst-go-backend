@@ -29,6 +29,7 @@ func InitSQLite(cfg config.SQLiteConfig) (*gorm.DB, error) {
 		&entity.User{},
 		&entity.Server{},
 		&entity.Dst{},
+		&entity.Task{},
 	)
 	if err != nil {
 		if sqlDB, dbErr := db.DB(); dbErr == nil {
@@ -65,6 +66,7 @@ func InitMySQL(cfg *database.MySQLConfig) (*gorm.DB, error) {
 		&entity.User{},
 		&entity.Server{},
 		&entity.Dst{},
+		&entity.Task{},
 	)
 	if err != nil {
 		if sqlDB, dbErr := db.DB(); dbErr == nil {
