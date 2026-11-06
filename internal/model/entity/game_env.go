@@ -9,3 +9,8 @@ type GameEnv struct {
 func (GameEnv) TableName() string {
 	return "game_env"
 }
+
+type GameEnvRef struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}

@@ -6,7 +6,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"strings"
 	"time"
 )
 
@@ -20,7 +19,7 @@ type MySQLConfig struct {
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 	ConnMaxIdleTime time.Duration
-	LogLevel        string
+	Logger          logger.Interface
 }
 
 func NewMySQL(cfg *MySQLConfig) (*gorm.DB, error) {
@@ -32,21 +31,8 @@ func NewMySQL(cfg *MySQLConfig) (*gorm.DB, error) {
 		cfg.Database,
 	)
 
-	// 日志级别
-	var gormLogLevel logger.LogLevel
-	switch strings.ToLower(cfg.LogLevel) {
-	case "silent":
-		gormLogLevel = logger.Silent
-	case "error":
-		gormLogLevel = logger.Error
-	case "warn":
-		gormLogLevel = logger.Warn
-	default:
-		gormLogLevel = logger.Info
-	}
-
 	gormConfig := &gorm.Config{
-		Logger:         logger.Default.LogMode(gormLogLevel),
+		Logger:         cfg.Logger,
 		TranslateError: true,
 	}
 

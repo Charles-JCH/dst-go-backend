@@ -2,18 +2,21 @@ package dst
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"game-panel/internal/apperr"
 	"game-panel/internal/model/entity"
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
+	"game-panel/internal/platform/crypto"
+	"game-panel/internal/repository"
 	"game-panel/internal/repository/dst"
 	"game-panel/internal/repository/server"
-	"gorm.io/gorm"
 	"log/slog"
 	"strings"
 )
+
+// errServerGone 事务内复查时服务器已被删除，用于回滚
+var errServerGone = errors.New("服务器已删除")
 
 type Service interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateDstReq) (*response.DstResp, error)
@@ -23,15 +26,26 @@ type Service interface {
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
+// AgentCommander 向服务器上的 Agent 下发命令
+type AgentCommander interface {
+	Delete(serverID uint64, slot int) (string, error)
+}
+
 type service struct {
 	dstRepo    dst.Repository
 	serverRepo server.Repository
+	tx         repository.Transaction
+	encryptor  crypto.Encryptor
+	agent      AgentCommander
 }
 
-func NewService(dstRepo dst.Repository, serverRepo server.Repository) Service {
+func NewService(dstRepo dst.Repository, serverRepo server.Repository, tx repository.Transaction, encryptor crypto.Encryptor, agent AgentCommander) Service {
 	return &service{
 		dstRepo:    dstRepo,
 		serverRepo: serverRepo,
+		tx:         tx,
+		encryptor:  encryptor,
+		agent:      agent,
 	}
 }
 
@@ -39,9 +53,6 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return nil, apperr.NewBizError(400, "存档名称为空")
-	}
-	if req.ServerID == 0 || req.Slot < 1 || req.Slot > 5 || req.MaxPlayers < 1 {
-		return nil, apperr.NewBizError(400, "存档参数无效")
 	}
 
 	server, err := s.serverRepo.GetByID(ctx, userID, req.ServerID)
@@ -57,6 +68,11 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 	if mods == nil {
 		mods = []string{}
 	}
+	token, err := s.encryptor.Encrypt(strings.TrimSpace(req.ClusterToken))
+	if err != nil {
+		slog.ErrorContext(ctx, "科雷令牌加密失败", "userID", userID, "error", err)
+		return nil, apperr.NewBizError(500, "存档创建失败")
+	}
 	dst := &entity.Dst{
 		ServerID:     req.ServerID,
 		UserID:       userID,
@@ -65,14 +81,29 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 		Description:  req.Description,
 		Password:     req.Password,
 		MaxPlayers:   req.MaxPlayers,
-		ClusterToken: strings.TrimSpace(req.ClusterToken),
+		ClusterToken: token,
 		Status:       0,
 		Mods:         mods,
 	}
 
-	// 创建存档
-	err = s.dstRepo.Create(ctx, dst)
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
+	// 先插入存档再复查服务器：与删除服务器的 NOT EXISTS 条件互斥，避免并发删除后留下孤儿存档
+	err = s.tx.ExecTx(ctx, func(txCtx context.Context) error {
+		if err := s.dstRepo.Create(txCtx, dst); err != nil {
+			return err
+		}
+		server, err := s.serverRepo.GetByID(txCtx, userID, req.ServerID)
+		if err != nil {
+			return err
+		}
+		if server == nil {
+			return errServerGone
+		}
+		return nil
+	})
+	if errors.Is(err, errServerGone) {
+		return nil, apperr.NewBizError(404, "服务器不存在")
+	}
+	if errors.Is(err, repository.ErrDuplicate) {
 		return nil, apperr.NewBizError(409, "该服务器的存档槽位已被占用")
 	}
 	if err != nil {
@@ -95,12 +126,6 @@ func (s *service) GetByID(ctx context.Context, userID uint64, dstID uint64) (*re
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error) {
-	if req.ServerID == 0 ||
-		req.Page < 1 || req.Page > 1000000 ||
-		req.PageSize < 1 || req.PageSize > 100 {
-		return nil, apperr.NewBizError(400, "查询参数无效")
-	}
-
 	server, err := s.serverRepo.GetByID(ctx, userID, req.ServerID)
 	if err != nil {
 		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", req.ServerID, "error", err)
@@ -133,35 +158,26 @@ func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *
 	if name == "" {
 		return apperr.NewBizError(400, "存档名称为空")
 	}
-	if req.MaxPlayers < 1 {
-		return apperr.NewBizError(400, "最大人数无效")
+
+	fields := dst.UpdateFields{
+		Name:        name,
+		Description: req.Description,
+		MaxPlayers:  req.MaxPlayers,
+		Mods:        req.Mods,
+		Password:    req.Password,
+	}
+	// 令牌为 nil 表示不修改
+	if req.ClusterToken != nil {
+		encrypted, err := s.encryptor.Encrypt(strings.TrimSpace(*req.ClusterToken))
+		if err != nil {
+			slog.ErrorContext(ctx, "科雷令牌加密失败", "userID", userID, "dstID", dstID, "error", err)
+			return apperr.NewBizError(500, "存档更新失败")
+		}
+		fields.ClusterToken = &encrypted
 	}
 
-	mods := req.Mods
-	if mods == nil {
-		mods = []string{}
-	}
-	modsJSON, err := json.Marshal(mods)
-	if err != nil {
-		slog.ErrorContext(ctx, "模组配置序列化失败", "userID", userID, "dstID", dstID, "error", err)
-		return apperr.NewBizError(500, "存档更新失败")
-	}
-
-	updates := map[string]any{
-		"name":        name,
-		"description": req.Description,
-		"max_players": req.MaxPlayers,
-		"mods":        string(modsJSON),
-	}
-	if req.Password != nil {
-		updates["password"] = *req.Password
-	}
-	if token := strings.TrimSpace(req.ClusterToken); token != "" {
-		updates["cluster_token"] = token
-	}
-
-	err = s.dstRepo.Update(ctx, userID, dstID, updates)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	err := s.dstRepo.Update(ctx, userID, dstID, fields)
+	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "存档不存在")
 	}
 	if err != nil {
@@ -172,13 +188,28 @@ func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *
 }
 
 func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error {
-	err := s.dstRepo.Delete(ctx, userID, dstID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	// 先取出存档，删除后需要用它的服务器和槽位通知 Agent
+	d, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
+		return apperr.NewBizError(500, "存档删除失败")
+	}
+	if d == nil {
+		return apperr.NewBizError(404, "存档不存在")
+	}
+
+	err = s.dstRepo.Delete(ctx, userID, dstID)
+	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "存档不存在")
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "存档删除失败", "userID", userID, "dstID", dstID, "error", err)
 		return apperr.NewBizError(500, "存档删除失败")
+	}
+
+	// 通知 Agent 清理服务器上的存档文件
+	if _, err := s.agent.Delete(d.ServerID, d.Slot); err != nil {
+		slog.WarnContext(ctx, "Agent 存档清理命令下发失败", "serverID", d.ServerID, "slot", d.Slot, "error", err)
 	}
 	return nil
 }

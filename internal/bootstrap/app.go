@@ -2,10 +2,11 @@ package bootstrap
 
 import (
 	"fmt"
-	"game-panel/internal/agent_manager"
+	"game-panel/internal/agentmanager"
 	"game-panel/internal/config"
 	authhandler "game-panel/internal/handler/v1/auth"
 	dsthandler "game-panel/internal/handler/v1/dst"
+	gameenvhandler "game-panel/internal/handler/v1/gameenv"
 	serverhandler "game-panel/internal/handler/v1/server"
 	taskhandler "game-panel/internal/handler/v1/task"
 	"game-panel/internal/platform/captcha"
@@ -13,20 +14,23 @@ import (
 	"game-panel/internal/platform/jwt"
 	"game-panel/internal/platform/redis"
 	"game-panel/internal/platform/sms"
-	"game-panel/internal/protocol"
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
 	dstrepo "game-panel/internal/repository/dst"
+	gameenvrepo "game-panel/internal/repository/gameenv"
 	serverrepo "game-panel/internal/repository/server"
 	taskrepo "game-panel/internal/repository/task"
 	"game-panel/internal/repository/user"
 	"game-panel/internal/router"
+	"game-panel/internal/service/agentevent"
 	authservice "game-panel/internal/service/auth"
 	captchaservice "game-panel/internal/service/captcha"
 	dstservice "game-panel/internal/service/dst"
+	gameenvservice "game-panel/internal/service/gameenv"
 	serverservice "game-panel/internal/service/server"
 	smsservice "game-panel/internal/service/sms"
 	taskservice "game-panel/internal/service/task"
+	"game-panel/internal/validator"
 	"log/slog"
 )
 
@@ -79,7 +83,7 @@ func Run(configPath string) error {
 	captchaManager := captcha.NewCaptcha(captcha.Config(cfg.Captcha), rdb)
 	jwtManager := jwt.NewTokenManager(jwt.Config(cfg.JWT))
 	passwordHasher := crypto.NewPasswordHasher()
-	agentHub := agent_manager.NewHub()
+	agentHub := agentmanager.NewHub()
 
 	// 初始化 SMS
 	var smsClient sms.Client
@@ -97,6 +101,7 @@ func Run(configPath string) error {
 
 	// repository
 	userRepo := user.NewRepository(sqlite)
+	gameEnvRepo := gameenvrepo.NewRepository(sqlite)
 	serverRepo := serverrepo.NewRepository(sqlite)
 	dstRepo := dstrepo.NewRepository(sqlite)
 	taskRepo := taskrepo.NewRepository(sqlite)
@@ -105,71 +110,50 @@ func Run(configPath string) error {
 	smsCache := cache.NewSMSCache(rdb)
 	smsLimit := cache.NewSMSLimit(rdb)
 
+	agentService := agentmanager.NewService(agentHub)
+
 	// service
 	captchaService := captchaservice.NewService(captchaManager)
-	smsService := smsservice.NewService(captchaManager, smsCache, smsClient, smsLimit)
+	smsService := smsservice.NewService(captchaManager, smsCache, smsClient, smsLimit, cache.SMSLimitPolicy(cfg.SMS.Limit))
 	authService := authservice.NewService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
+	gameEnvService := gameenvservice.NewService(gameEnvRepo)
 	serverService := serverservice.NewService(serverRepo, taskRepo, txManager, encryptor, agentHub)
-	dstService := dstservice.NewService(dstRepo, serverRepo)
+	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentService)
 	taskService := taskservice.NewService(taskRepo)
 
 	// handler
 	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
+	gameEnvHandler := gameenvhandler.NewHandler(gameEnvService)
 	serverHandler := serverhandler.NewHandler(serverService)
 	dstHandler := dsthandler.NewHandler(dstService)
 	taskHandler := taskhandler.NewHandler(taskService)
 
 	// agent
-	agentAuth := agent_manager.NewAuth(jwtManager, serverRepo)
-	agentService := agent_manager.NewService(agentHub)
-	agentService.OnAck = func(serverID uint64, id string, ack protocol.Ack) {
-		slog.Info("agent 命令确认",
-			"serverID", serverID,
-			"commandID", id,
-			"accepted", ack.Accepted,
-			"reason", ack.Reason,
-		)
+	agentAuth := agentmanager.NewAuth(jwtManager, serverRepo)
+	agentEvents := agentevent.NewService()
+	agentService.OnAck = agentEvents.OnAck
+	agentService.OnLog = agentEvents.OnLog
+	agentService.OnResult = agentEvents.OnResult
+	agentService.OnInterrupted = agentEvents.OnInterrupted
+	agentHandler := agentmanager.NewHandler(agentHub, agentAuth, agentService)
+
+	// 注册参数校验规则
+	if err := validator.Register(); err != nil {
+		return fmt.Errorf("参数校验规则注册失败: %w", err)
 	}
-	agentService.OnLog = func(serverID uint64, id string, line protocol.Log) {
-		slog.Info("agent 执行日志",
-			"serverID", serverID,
-			"commandID", id,
-			"content", line.Content,
-		)
-	}
-	agentService.OnResult = func(serverID uint64, id string, res protocol.Result) {
-		slog.Info("agent 执行结果",
-			"serverID", serverID,
-			"commandID", id,
-			"success", res.Success,
-			"exitCode", res.ExitCode,
-			"error", res.Error,
-		)
-	}
-	agentService.OnInterrupted = func(
-		serverID uint64,
-		id string,
-		reason string,
-	) {
-		slog.Warn("agent 命令结果未知",
-			"serverID", serverID,
-			"commandID", id,
-			"reason", reason,
-		)
-	}
-	agentHandler := agent_manager.NewHandler(agentHub, agentAuth, agentService)
 
 	// 注册路由
-	engine := router.InitRouter(
-		cfg.Server,
-		limiter,
-		authService,
-		authHandler,
-		serverHandler,
-		dstHandler,
-		taskHandler,
-		agentHandler,
-	)
+	engine, err := router.InitRouter(cfg.Server, limiter, authService, router.Handlers{
+		Auth:    authHandler,
+		GameEnv: gameEnvHandler,
+		Server:  serverHandler,
+		Dst:     dstHandler,
+		Task:    taskHandler,
+		Agent:   agentHandler,
+	})
+	if err != nil {
+		return err
+	}
 
 	return RunHTTPServer(cfg.Server, engine)
 }

@@ -1,7 +1,14 @@
 package request
 
+const (
+	SMSSceneRegister = "register"
+	SMSSceneReset    = "reset"
+	SMSSceneLogin    = "login"
+)
+
 type SendSMSCodeReq struct {
 	Phone       string `json:"phone" binding:"required,cnphone"`
+	Scene       string `json:"scene" binding:"required,oneof=register reset login"`
 	CaptchaID   string `json:"captchaID" binding:"required"`
 	CaptchaCode string `json:"captchaCode" binding:"required"`
 }

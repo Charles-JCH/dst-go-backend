@@ -6,19 +6,19 @@ import (
 )
 
 type ServerResp struct {
-	ID        uint64    `json:"id"`
-	Name      string    `json:"name"`
-	IP        string    `json:"ip"`
-	Port      int       `json:"port"`
-	Username  string    `json:"username"`
-	Cpu       int       `json:"cpu"`
-	Ram       int64     `json:"ram"`
-	Disk      int64     `json:"disk"`
-	OsName    string    `json:"osName"`
-	GameEnv   []string  `json:"gameEnv"`
-	Mods      []string  `json:"mods"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        uint64        `json:"id"`
+	Name      string        `json:"name"`
+	IP        string        `json:"ip"`
+	Port      int           `json:"port"`
+	Username  string        `json:"username"`
+	Cpu       int           `json:"cpu"`
+	Ram       int64         `json:"ram"`
+	Disk      int64         `json:"disk"`
+	OsName    string        `json:"osName"`
+	GameEnv   []GameEnvResp `json:"gameEnv"`
+	Mods      []string      `json:"mods"`
+	CreatedAt time.Time     `json:"createdAt"`
+	UpdatedAt time.Time     `json:"updatedAt"`
 }
 
 type ServerListResp struct {
@@ -29,9 +29,9 @@ type ServerListResp struct {
 }
 
 func ToServerResp(server *entity.Server) *ServerResp {
-	gameEnv := server.GameEnv
-	if gameEnv == nil {
-		gameEnv = []string{}
+	gameEnv := make([]GameEnvResp, 0, len(server.GameEnv))
+	for _, env := range server.GameEnv {
+		gameEnv = append(gameEnv, GameEnvResp{Code: env.Code, Name: env.Name})
 	}
 
 	mods := server.Mods

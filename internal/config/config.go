@@ -12,6 +12,7 @@ type Config struct {
 	Server  ServerConfig  `mapstructure:"server"`
 	Log     LogConfig     `mapstructure:"log"`
 	SQLite  SQLiteConfig  `mapstructure:"sqlite"`
+	MySQL   MySQLConfig   `mapstructure:"mysql"` // 预留，迁移到 MySQL 时使用
 	Redis   RedisConfig   `mapstructure:"redis"`
 	JWT     JWTConfig     `mapstructure:"jwt"`
 	Captcha CaptchaConfig `mapstructure:"captcha"`
@@ -100,6 +101,7 @@ type CaptchaConfig struct {
 type SMSConfig struct {
 	Provider string    `mapstructure:"provider"`
 	Aliyun   AliyunSMS `mapstructure:"aliyun"`
+	Limit    SMSLimit  `mapstructure:"limit"`
 }
 
 type AliyunSMS struct {
@@ -107,6 +109,13 @@ type AliyunSMS struct {
 	AccessKeySecret string `mapstructure:"access_key_secret"`
 	SignName        string `mapstructure:"sign_name"`
 	TemplateCode    string `mapstructure:"template_code"`
+}
+
+type SMSLimit struct {
+	IPMinute    int64 `mapstructure:"ip_minute"`
+	PhoneMinute int64 `mapstructure:"phone_minute"`
+	IPDay       int64 `mapstructure:"ip_day"`
+	PhoneDay    int64 `mapstructure:"phone_day"`
 }
 
 type CryptoConfig struct {

@@ -11,7 +11,6 @@ import (
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/server"
 	"game-panel/internal/repository/task"
-	"gorm.io/gorm"
 	"log/slog"
 	"net/netip"
 	"strings"
@@ -72,7 +71,7 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 		Port:     req.Port,
 		Username: username,
 		Password: password,
-		GameEnv:  []string{},
+		GameEnv:  []entity.GameEnvRef{},
 		Mods:     []string{},
 		UserID:   userID,
 	}
@@ -94,7 +93,7 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 
 		return s.taskRepo.Create(txCtx, task)
 	})
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
+	if errors.Is(err, repository.ErrDuplicate) {
 		return nil, apperr.NewBizError(409, "该IP和SSH端口的服务器已存在")
 	}
 	if err != nil {
@@ -117,10 +116,6 @@ func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
-	if req.Page < 1 || req.Page > 1000000 ||
-		req.PageSize < 1 || req.PageSize > 100 {
-		return nil, apperr.NewBizError(400, "分页参数无效")
-	}
 	servers, total, err := s.serverRepo.List(ctx, userID, req.Page, req.PageSize)
 	if err != nil {
 		slog.ErrorContext(ctx, "服务器列表查询失败", "userID", userID, "error", err)
@@ -151,25 +146,21 @@ func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, re
 	}
 	ip := addr.Unmap().String()
 
-	updates := map[string]any{
-		"name":     name,
-		"ip":       ip,
-		"port":     req.Port,
-		"username": username,
-	}
-	if req.Password != "" {
-		password, err := s.encryptor.Encrypt(req.Password)
+	fields := server.UpdateFields{Name: name, IP: ip, Port: req.Port, Username: username}
+	// 密码为 nil 表示不修改
+	if req.Password != nil {
+		password, err := s.encryptor.Encrypt(*req.Password)
 		if err != nil {
 			slog.ErrorContext(ctx, "SSH密码加密失败", "userID", userID, "serverID", serverID, "error", err)
 			return apperr.NewBizError(500, "服务器更新失败")
 		}
-		updates["password"] = password
+		fields.Password = &password
 	}
-	err = s.serverRepo.Update(ctx, userID, serverID, updates)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	err = s.serverRepo.Update(ctx, userID, serverID, fields)
+	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "服务器不存在")
 	}
-	if errors.Is(err, gorm.ErrDuplicatedKey) {
+	if errors.Is(err, repository.ErrDuplicate) {
 		return apperr.NewBizError(409, "该IP和SSH端口的服务器已存在")
 	}
 	if err != nil {
@@ -184,7 +175,7 @@ func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) er
 	if errors.Is(err, server.ErrServerHasDst) {
 		return apperr.NewBizError(409, "服务器下仍有存档，请先删除存档")
 	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "服务器不存在")
 	}
 	if err != nil {

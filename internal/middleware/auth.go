@@ -1,31 +1,23 @@
 package middleware
 
 import (
+	"game-panel/internal/handler"
 	"game-panel/internal/result"
 	"game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
-	"strings"
 )
 
 // Auth JWT 鉴权中间件
 func Auth(authService auth.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			result.FailWithMsg(c, 401, "登录凭证缺失")
+		token, ok := handler.BearerToken(c)
+		if !ok {
+			result.FailWithMsg(c, 401, "登录凭证缺失或格式错误")
 			c.Abort()
 			return
 		}
 
-		// 按 Bearer 前缀切割
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			result.FailWithMsg(c, 401, "登录凭证格式错误")
-			c.Abort()
-			return
-		}
-
-		identity, err := authService.Authenticate(c.Request.Context(), parts[1])
+		identity, err := authService.Authenticate(c.Request.Context(), token)
 		if err != nil {
 			result.Fail(c, err)
 			c.Abort()

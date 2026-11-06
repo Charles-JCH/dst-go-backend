@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"game-panel/internal/agent_client"
+	"game-panel/internal/agentclient"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,15 +22,15 @@ func main() {
 	defer stop()
 
 	// 加载配置
-	cfg, err := agent_client.Load(configPath)
+	cfg, err := agentclient.Load(configPath)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "agent 配置加载失败: %v\n", err)
 		os.Exit(1)
 	}
 
 	// 初始化 agent
-	exec := agent_client.NewExecutor(cfg.Executor)
-	agentClient := agent_client.NewClient(cfg.Server, cfg.Identity, exec)
+	exec := agentclient.NewExecutor(cfg.Executor)
+	agentClient := agentclient.NewClient(cfg.Server, cfg.Identity, exec)
 
 	// 启动 agent
 	if err := agentClient.Start(ctx, token); err != nil {

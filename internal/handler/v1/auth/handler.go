@@ -1,11 +1,12 @@
 package auth
 
 import (
+	"game-panel/internal/handler"
 	"game-panel/internal/model/request"
 	"game-panel/internal/result"
 	"game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
-	"strings"
+	"net/http"
 	"time"
 )
 
@@ -127,12 +128,11 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 // Logout 退出登录
 // [POST] /api/v1/auth/logout
 func (h *Handler) Logout(c *gin.Context) {
-	parts := strings.Fields(c.GetHeader("Authorization"))
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+	accessToken, ok := handler.BearerToken(c)
+	if !ok {
 		result.FailWithMsg(c, 400, "登录凭证缺失或格式错误")
 		return
 	}
-	accessToken := parts[1]
 	refreshToken, err := c.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		refreshToken = ""
@@ -181,17 +181,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 // GetProfile 获取当前登录用户的信息
 // [GET] /api/v1/auth/profile
 func (h *Handler) GetProfile(c *gin.Context) {
-	userIDVal, exists := c.Get("userID")
-	if !exists {
-		result.FailWithMsg(c, 401, "未授权")
-		return
-	}
-	userID, ok := userIDVal.(uint64)
-	if !ok {
-		result.FailWithMsg(c, 401, "用户标识无效")
-		return
-	}
-	user, err := h.authService.GetProfile(c.Request.Context(), userID)
+	user, err := h.authService.GetProfile(c.Request.Context(), c.GetUint64("userID"))
 	if err != nil {
 		result.Fail(c, err)
 		return
@@ -201,6 +191,7 @@ func (h *Handler) GetProfile(c *gin.Context) {
 
 // setRefreshTokenCookie 设置 HttpOnly Cookie
 func (h *Handler) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
 		RefreshTokenCookieName,
 		refreshToken,
@@ -214,6 +205,7 @@ func (h *Handler) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
 
 // clearRefreshTokenCookie 清除 Cookie
 func (h *Handler) clearRefreshTokenCookie(c *gin.Context) {
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie(
 		RefreshTokenCookieName,
 		"",

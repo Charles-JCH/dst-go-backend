@@ -17,6 +17,15 @@ type Config struct {
 	Issuer        string
 }
 
+type TokenManager interface {
+	GenerateAccessToken(userID uint64, username string, role string, tokenVersion uint64) (string, error)
+	GenerateRefreshToken(userID uint64, username string, role string, tokenVersion uint64) (string, error)
+	ParseToken(tokenString string, isRefresh bool) (*CustomClaims, error)
+
+	GenerateAgentToken(serverID uint64, version uint64) (string, error)
+	ParseAgentToken(tokenString string) (uint64, uint64, error)
+}
+
 type CustomClaims struct {
 	UserID       uint64 `json:"userID"`
 	Username     string `json:"username"`
@@ -25,13 +34,9 @@ type CustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-type TokenManager interface {
-	GenerateAccessToken(userID uint64, username string, role string, tokenVersion uint64) (string, error)
-	GenerateRefreshToken(userID uint64, username string, role string, tokenVersion uint64) (string, error)
-	ParseToken(tokenString string, isRefresh bool) (*CustomClaims, error)
-
-	GenerateAgentToken(serverID uint64) (string, error)
-	ParseAgentToken(tokenString string) (uint64, error)
+type agentClaims struct {
+	Version uint64 `json:"ver"`
+	jwt.RegisteredClaims
 }
 
 type tokenManager struct {
@@ -40,25 +45,6 @@ type tokenManager struct {
 
 func NewTokenManager(cfg Config) TokenManager {
 	return &tokenManager{cfg: cfg}
-}
-
-func (j *tokenManager) generateToken(userID uint64, username, role string, tokenVersion uint64, secret string, expire time.Duration) (string, error) {
-	now := time.Now()
-	claims := CustomClaims{
-		UserID:       userID,
-		Username:     username,
-		Role:         role,
-		TokenVersion: tokenVersion,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ID:        uuid.NewString(),
-			Issuer:    j.cfg.Issuer,
-			IssuedAt:  jwt.NewNumericDate(now),
-			NotBefore: jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(now.Add(expire)),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
 }
 
 // GenerateAccessToken 生成 AccessToken
@@ -102,14 +88,17 @@ func (j *tokenManager) ParseToken(tokenString string, isRefresh bool) (*CustomCl
 }
 
 // GenerateAgentToken 生成 AgentToken
-func (j *tokenManager) GenerateAgentToken(serverID uint64) (string, error) {
-	if serverID == 0 {
-		return "", errors.New("serverID 无效")
+func (j *tokenManager) GenerateAgentToken(serverID uint64, version uint64) (string, error) {
+	if serverID == 0 || version == 0 {
+		return "", errors.New("serverID 或 version 无效")
 	}
 
-	claims := jwt.RegisteredClaims{
-		Subject: strconv.FormatUint(serverID, 10),
-		Issuer:  j.cfg.Issuer,
+	claims := agentClaims{
+		Version: version,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: strconv.FormatUint(serverID, 10),
+			Issuer:  j.cfg.Issuer,
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -117,8 +106,8 @@ func (j *tokenManager) GenerateAgentToken(serverID uint64) (string, error) {
 }
 
 // ParseAgentToken 校验并解析 AgentToken
-func (j *tokenManager) ParseAgentToken(tokenString string) (uint64, error) {
-	claims := &jwt.RegisteredClaims{}
+func (j *tokenManager) ParseAgentToken(tokenString string) (uint64, uint64, error) {
+	claims := &agentClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		claims,
@@ -132,17 +121,36 @@ func (j *tokenManager) ParseAgentToken(tokenString string) (uint64, error) {
 	)
 
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	if !token.Valid {
-		return 0, errors.New("agent token 无效")
+		return 0, 0, errors.New("agent token 无效")
 	}
 
 	serverID, err := strconv.ParseUint(claims.Subject, 10, 64)
-	if err != nil || serverID == 0 {
-		return 0, errors.New("agent token 的 serverID 无效")
+	if err != nil || serverID == 0 || claims.Version == 0 {
+		return 0, 0, errors.New("agent token 的 serverID 或 version 无效")
 	}
 
-	return serverID, nil
+	return serverID, claims.Version, nil
+}
+
+func (j *tokenManager) generateToken(userID uint64, username, role string, tokenVersion uint64, secret string, expire time.Duration) (string, error) {
+	now := time.Now()
+	claims := CustomClaims{
+		UserID:       userID,
+		Username:     username,
+		Role:         role,
+		TokenVersion: tokenVersion,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.NewString(),
+			Issuer:    j.cfg.Issuer,
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expire)),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }

@@ -14,20 +14,6 @@ var ErrSMSCodeAttemptsExceeded = errors.New(
 	"短信验证码错误次数已达上限",
 )
 
-type SMSCache interface {
-	SetCode(ctx context.Context, phone string, code string, ttl time.Duration) error
-	ConsumeCode(ctx context.Context, phone string, code string) (bool, error)
-	DelCode(ctx context.Context, phone string) error
-}
-
-type smsCache struct {
-	client *redis.Client
-}
-
-func NewSMSCache(client *redis.Client) SMSCache {
-	return &smsCache{client: client}
-}
-
 var setCodeLua = redis.NewScript(`
 redis.call('HSET', KEYS[1], 'code', ARGV[1], 'attempts', 0)
 redis.call('PEXPIRE', KEYS[1], ARGV[2])
@@ -55,12 +41,25 @@ end
 return 0
 `)
 
-func (c *smsCache) SetCode(ctx context.Context, phone, code string, ttl time.Duration) error {
+type SMSCache interface {
+	SetCode(ctx context.Context, scene, phone string, code string, ttl time.Duration) error
+	ConsumeCode(ctx context.Context, scene, phone string, code string) (bool, error)
+}
+
+type smsCache struct {
+	client *redis.Client
+}
+
+func NewSMSCache(client *redis.Client) SMSCache {
+	return &smsCache{client: client}
+}
+
+func (c *smsCache) SetCode(ctx context.Context, scene, phone, code string, ttl time.Duration) error {
 	if ttl.Milliseconds() <= 0 {
 		return fmt.Errorf("短信验证码有效期须至少为 1 毫秒")
 	}
 
-	key := smsCodePrefix + phone
+	key := smsCodeKey(scene, phone)
 	err := setCodeLua.Run(ctx, c.client, []string{key}, code, ttl.Milliseconds()).Err()
 	if err != nil {
 		return fmt.Errorf("短信验证码保存失败: %w", err)
@@ -68,8 +67,8 @@ func (c *smsCache) SetCode(ctx context.Context, phone, code string, ttl time.Dur
 	return nil
 }
 
-func (c *smsCache) ConsumeCode(ctx context.Context, phone string, code string) (bool, error) {
-	key := smsCodePrefix + phone
+func (c *smsCache) ConsumeCode(ctx context.Context, scene, phone string, code string) (bool, error) {
+	key := smsCodeKey(scene, phone)
 	result, err := consumeCodeLua.Run(ctx, c.client, []string{key}, code).Int64()
 	if err != nil {
 		return false, fmt.Errorf("短信验证码消费失败: %w", err)
@@ -80,7 +79,6 @@ func (c *smsCache) ConsumeCode(ctx context.Context, phone string, code string) (
 	return result == 1, nil
 }
 
-func (c *smsCache) DelCode(ctx context.Context, phone string) error {
-	key := smsCodePrefix + phone
-	return c.client.Del(ctx, key).Err()
+func smsCodeKey(scene, phone string) string {
+	return smsCodePrefix + scene + ":" + phone
 }

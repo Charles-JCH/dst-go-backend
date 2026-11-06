@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/utils"
-	"github.com/alibabacloud-go/tea/dara"
-	"log/slog"
-
 	dysmsapi "github.com/alibabacloud-go/dysmsapi-20170525/v5/client"
+	"github.com/alibabacloud-go/tea/dara"
 )
 
 type Config struct {
@@ -87,8 +85,5 @@ func (c *aliyunClient) SendSMS(ctx context.Context, phone string, code string) e
 			dara.StringValue(body.RequestId),
 		)
 	}
-
-	slog.InfoContext(ctx, "阿里云短信已受理", "requestID", dara.StringValue(body.RequestId), "bizID", dara.StringValue(body.BizId))
-
 	return nil
 }

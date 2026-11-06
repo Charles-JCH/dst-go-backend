@@ -1,4 +1,4 @@
-package agent_manager
+package agentmanager
 
 import (
 	"context"
@@ -7,11 +7,11 @@ import (
 )
 
 type TokenParser interface {
-	ParseAgentToken(token string) (uint64, error)
+	ParseAgentToken(token string) (uint64, uint64, error)
 }
 
 type ServerStore interface {
-	ExistsByID(ctx context.Context, serverID uint64) (bool, error)
+	AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error)
 }
 
 type Auth struct {
@@ -26,28 +26,39 @@ func NewAuth(tokenParser TokenParser, serverStore ServerStore) *Auth {
 	}
 }
 
+// Authenticate 校验令牌签名并核对令牌版本
 func (a *Auth) Authenticate(ctx context.Context, token string) (uint64, error) {
 	if token == "" {
 		return 0, apperr.NewBizError(401, "agent token 为空")
 	}
-	serverID, err := a.tokenParser.ParseAgentToken(token)
+	serverID, version, err := a.tokenParser.ParseAgentToken(token)
 	if err != nil {
 		return 0, apperr.NewBizError(401, "agent token 无效")
 	}
-	if err := a.CheckServer(ctx, serverID); err != nil {
-		return 0, err
-	}
-	return serverID, nil
+	return serverID, a.check(ctx, serverID, version)
 }
 
+// CheckServer 连接建立后再次确认服务器仍存在
 func (a *Auth) CheckServer(ctx context.Context, serverID uint64) error {
-	exists, err := a.serverStore.ExistsByID(ctx, serverID)
+	_, exists, err := a.serverStore.AgentTokenVersion(ctx, serverID)
 	if err != nil {
 		slog.ErrorContext(ctx, "agent 服务器查询失败", "serverID", serverID, "error", err)
 		return apperr.NewBizError(500, "agent 认证服务不可用")
 	}
 	if !exists {
 		return apperr.NewBizError(401, "agent 对应的服务器不存在")
+	}
+	return nil
+}
+
+func (a *Auth) check(ctx context.Context, serverID, version uint64) error {
+	current, exists, err := a.serverStore.AgentTokenVersion(ctx, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "agent 服务器查询失败", "serverID", serverID, "error", err)
+		return apperr.NewBizError(500, "agent 认证服务不可用")
+	}
+	if !exists || current != version {
+		return apperr.NewBizError(401, "agent token 已失效")
 	}
 	return nil
 }

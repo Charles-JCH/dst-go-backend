@@ -8,16 +8,24 @@ import (
 	"gorm.io/gorm"
 )
 
+var ErrServerHasDst = errors.New("服务器仍有关联存档")
+
 type Repository interface {
-	ExistsByID(ctx context.Context, serverID uint64) (bool, error)
+	AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error)
 	Create(ctx context.Context, server *entity.Server) error
 	GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error)
 	List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error)
-	Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error
+	Update(ctx context.Context, userID uint64, serverID uint64, fields UpdateFields) error
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
 }
 
-var ErrServerHasDst = errors.New("服务器仍有关联存档")
+type UpdateFields struct {
+	Name     string
+	IP       string
+	Port     int
+	Username string
+	Password *string
+}
 
 type repository struct {
 	db *gorm.DB
@@ -27,38 +35,20 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) ExistsByID(ctx context.Context, serverID uint64) (bool, error) {
-	var count int64
-	err := r.getDB(ctx).
-		Model(&entity.Server{}).
-		Where("id = ?", serverID).
-		Count(&count).Error
-	if err != nil {
-		return false, err
+func (r *repository) AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error) {
+	server, err := repo.First[entity.Server](r.getDB(ctx).Select("agent_token_version"), "id = ?", serverID)
+	if err != nil || server == nil {
+		return 0, false, err
 	}
-	return count > 0, nil
-}
-
-func (r *repository) getDB(ctx context.Context) *gorm.DB {
-	return repo.GetDBFromCtx(ctx, r.db)
+	return server.AgentTokenVersion, true, nil
 }
 
 func (r *repository) Create(ctx context.Context, server *entity.Server) error {
-	return r.getDB(ctx).Create(server).Error
+	return repo.WrapError(r.getDB(ctx).Create(server).Error)
 }
 
 func (r *repository) GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error) {
-	var server entity.Server
-	err := r.getDB(ctx).
-		Where("id = ? AND user_id = ?", serverID, userID).
-		First(&server).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &server, nil
+	return repo.First[entity.Server](r.getDB(ctx), "id = ? AND user_id = ?", serverID, userID)
 }
 
 func (r *repository) List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error) {
@@ -78,13 +68,22 @@ func (r *repository) List(ctx context.Context, userID uint64, page int, pageSize
 	return servers, total, err
 }
 
-func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64, updates map[string]any) error {
+func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64, fields UpdateFields) error {
+	updates := map[string]any{
+		"name":     fields.Name,
+		"ip":       fields.IP,
+		"port":     fields.Port,
+		"username": fields.Username,
+	}
+	if fields.Password != nil {
+		updates["password"] = *fields.Password
+	}
 	result := r.getDB(ctx).
 		Model(&entity.Server{}).
 		Where("id = ? AND user_id = ?", serverID, userID).
 		Updates(updates)
 	if result.Error != nil {
-		return result.Error
+		return repo.WrapError(result.Error)
 	}
 	if result.RowsAffected > 0 {
 		return nil
@@ -94,7 +93,7 @@ func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64,
 		return err
 	}
 	if server == nil {
-		return gorm.ErrRecordNotFound
+		return repo.ErrNotFound
 	}
 	return nil
 }
@@ -109,7 +108,7 @@ func (r *repository) Delete(ctx context.Context, userID uint64, serverID uint64)
 		Where("NOT EXISTS (?)", dsts).
 		Delete(&entity.Server{})
 	if result.Error != nil {
-		return result.Error
+		return repo.WrapError(result.Error)
 	}
 	if result.RowsAffected > 0 {
 		return nil
@@ -119,7 +118,11 @@ func (r *repository) Delete(ctx context.Context, userID uint64, serverID uint64)
 		return err
 	}
 	if server == nil {
-		return gorm.ErrRecordNotFound
+		return repo.ErrNotFound
 	}
 	return ErrServerHasDst
+}
+
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }

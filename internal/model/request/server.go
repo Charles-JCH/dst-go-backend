@@ -9,11 +9,11 @@ type CreateServerReq struct {
 }
 
 type UpdateServerReq struct {
-	Name     string `json:"name" binding:"required,max=64"`
-	IP       string `json:"ip" binding:"required,ip"`
-	Port     int    `json:"port" binding:"required,min=1,max=65535"`
-	Username string `json:"username" binding:"required,max=64"`
-	Password string `json:"password" binding:"omitempty,max=256"`
+	Name     string  `json:"name" binding:"required,max=64"`
+	IP       string  `json:"ip" binding:"required,ip"`
+	Port     int     `json:"port" binding:"required,min=1,max=65535"`
+	Username string  `json:"username" binding:"required,max=64"`
+	Password *string `json:"password" binding:"omitempty,min=1,max=256"`
 }
 
 type ListServerReq struct {

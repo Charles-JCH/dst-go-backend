@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"errors"
 	"game-panel/internal/model/entity"
 	repo "game-panel/internal/repository"
 	"gorm.io/gorm"
@@ -31,29 +30,12 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) getDB(ctx context.Context) *gorm.DB {
-	return repo.GetDBFromCtx(ctx, r.db)
-}
-
 func (r *repository) Create(ctx context.Context, task *entity.Task) error {
-	return r.getDB(ctx).Create(task).Error
+	return repo.WrapError(r.getDB(ctx).Create(task).Error)
 }
 
 func (r *repository) GetByID(ctx context.Context, userID uint64, taskID uint64) (*entity.Task, error) {
-	var task entity.Task
-
-	err := r.getDB(ctx).
-		Where("id = ? AND user_id = ?", taskID, userID).
-		First(&task).Error
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &task, nil
+	return repo.First[entity.Task](r.getDB(ctx), "id = ? AND user_id = ?", taskID, userID)
 }
 
 func (r *repository) List(ctx context.Context, userID uint64, query ListQuery) ([]entity.Task, int64, error) {
@@ -91,4 +73,8 @@ func (r *repository) List(ctx context.Context, userID uint64, query ListQuery) (
 	}
 
 	return tasks, total, nil
+}
+
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }

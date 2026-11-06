@@ -16,17 +16,6 @@ type Response struct {
 	TraceID string `json:"traceID,omitempty"`
 }
 
-// jsonResponse 统一响应 JSON
-func jsonResponse(c *gin.Context, httpStatus int, code int, msg string, data any) {
-	traceID := logger.GetTraceID(c.Request.Context())
-	c.JSON(httpStatus, Response{
-		Code:    code,
-		Msg:     msg,
-		Data:    data,
-		TraceID: traceID,
-	})
-}
-
 // Success 成功
 func Success(c *gin.Context, data any) {
 	jsonResponse(c, http.StatusOK, http.StatusOK, "成功", data)
@@ -50,4 +39,15 @@ func Fail(c *gin.Context, err error) {
 // FailWithMsg 自定义失败状态码和错误消息
 func FailWithMsg(c *gin.Context, code int, msg string) {
 	jsonResponse(c, code, code, msg, nil)
+}
+
+// jsonResponse 统一响应 JSON
+func jsonResponse(c *gin.Context, httpStatus int, code int, msg string, data any) {
+	traceID := logger.GetTraceID(c.Request.Context())
+	c.JSON(httpStatus, Response{
+		Code:    code,
+		Msg:     msg,
+		Data:    data,
+		TraceID: traceID,
+	})
 }

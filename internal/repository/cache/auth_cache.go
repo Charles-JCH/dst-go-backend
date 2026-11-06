@@ -14,21 +14,21 @@ const (
 	resetTokenPrefix     = "reset_token:"
 )
 
-type ResetTokenData struct {
-	UserID       uint64 `json:"userID"`
-	TokenVersion uint64 `json:"tokenVersion"`
-}
-
 type AuthCache interface {
 	// 黑名单
-	AddTokenToBlacklist(ctx context.Context, token string, ttl time.Duration) error
-	IsTokenInBlacklist(ctx context.Context, token string) (bool, error)
-	ConsumeRefreshToken(ctx context.Context, token string, ttl time.Duration) (bool, error)
+	AddTokenToBlacklist(ctx context.Context, jti string, ttl time.Duration) error
+	IsTokenInBlacklist(ctx context.Context, jti string) (bool, error)
+	ConsumeRefreshToken(ctx context.Context, jti string, ttl time.Duration) (bool, error)
 
 	// 重置密码
 	SetResetToken(ctx context.Context, token string, userID uint64, tokenVersion uint64, ttl time.Duration) error
 	GetResetToken(ctx context.Context, token string) (*ResetTokenData, error)
 	DelResetToken(ctx context.Context, token string) error
+}
+
+type ResetTokenData struct {
+	UserID       uint64 `json:"userID"`
+	TokenVersion uint64 `json:"tokenVersion"`
 }
 
 type authCache struct {
@@ -39,26 +39,26 @@ func NewAuthCache(client *redis.Client) AuthCache {
 	return &authCache{client: client}
 }
 
-func (c *authCache) AddTokenToBlacklist(ctx context.Context, token string, ttl time.Duration) error {
-	key := tokenBlacklistPrefix + token
+func (c *authCache) AddTokenToBlacklist(ctx context.Context, jti string, ttl time.Duration) error {
+	key := tokenBlacklistPrefix + jti
 	return c.client.Set(ctx, key, "1", ttl).Err()
 }
 
-func (c *authCache) IsTokenInBlacklist(ctx context.Context, token string) (bool, error) {
-	key := tokenBlacklistPrefix + token
+func (c *authCache) IsTokenInBlacklist(ctx context.Context, jti string) (bool, error) {
+	key := tokenBlacklistPrefix + jti
 	exists, err := c.client.Exists(ctx, key).Result()
 	return exists > 0, err
 }
 
-func (c *authCache) ConsumeRefreshToken(ctx context.Context, token string, ttl time.Duration) (bool, error) {
-	if token == "" {
+func (c *authCache) ConsumeRefreshToken(ctx context.Context, jti string, ttl time.Duration) (bool, error) {
+	if jti == "" {
 		return false, errors.New("刷新凭证为空")
 	}
 	if ttl <= 0 {
 		return false, errors.New("刷新凭证已过期")
 	}
 
-	key := tokenBlacklistPrefix + token
+	key := tokenBlacklistPrefix + jti
 
 	consumed, err := c.client.SetNX(ctx, key, "1", ttl).Result()
 	if err != nil {
@@ -100,10 +100,7 @@ func (c *authCache) GetResetToken(ctx context.Context, token string) (*ResetToke
 	return &data, nil
 }
 
-func (c *authCache) DelResetToken(
-	ctx context.Context,
-	token string,
-) error {
+func (c *authCache) DelResetToken(ctx context.Context, token string) error {
 	key := resetTokenPrefix + token
 	return c.client.Del(ctx, key).Err()
 }

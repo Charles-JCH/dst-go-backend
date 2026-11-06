@@ -18,31 +18,6 @@ const (
 	SMSLimitPhoneDay
 )
 
-type SMSLimitPolicy struct {
-	IPMinute    int64
-	PhoneMinute int64
-	IPDay       int64
-	PhoneDay    int64
-}
-
-type SMSReservation struct {
-	id   string
-	keys []string
-}
-
-type SMSLimit interface {
-	Reserve(ctx context.Context, ip, phone string, policy SMSLimitPolicy) (*SMSReservation, SMSLimitReason, error)
-	Release(ctx context.Context, reservation *SMSReservation) error
-}
-
-type smsLimit struct {
-	client *redis.Client
-}
-
-func NewSMSLimit(client *redis.Client) SMSLimit {
-	return &smsLimit{client: client}
-}
-
 // 四个 Key 依次对应：IP分钟、手机号分钟、IP当天、手机号当天
 var reserveSMSLua = redis.NewScript(`
 local serverTime = redis.call('TIME')
@@ -86,6 +61,31 @@ for i = 1, #KEYS do
 end
 return 1
 `)
+
+type SMSLimit interface {
+	Reserve(ctx context.Context, ip, phone string, policy SMSLimitPolicy) (*SMSReservation, SMSLimitReason, error)
+	Release(ctx context.Context, reservation *SMSReservation) error
+}
+
+type SMSLimitPolicy struct {
+	IPMinute    int64
+	PhoneMinute int64
+	IPDay       int64
+	PhoneDay    int64
+}
+
+type SMSReservation struct {
+	id   string
+	keys []string
+}
+
+type smsLimit struct {
+	client *redis.Client
+}
+
+func NewSMSLimit(client *redis.Client) SMSLimit {
+	return &smsLimit{client: client}
+}
 
 func (l *smsLimit) Reserve(ctx context.Context, ip, phone string, policy SMSLimitPolicy) (*SMSReservation, SMSLimitReason, error) {
 	if policy.IPMinute <= 0 || policy.PhoneMinute <= 0 ||

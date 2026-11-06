@@ -1,4 +1,4 @@
-package agent_client
+package agentclient
 
 import (
 	"bufio"
@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type LogFunc func(line string)
@@ -24,104 +25,47 @@ func NewExecutor(cfg ExecutorConfig) *Executor {
 }
 
 func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onLog LogFunc) *protocol.Result {
+	failed := func(msg string) *protocol.Result {
+		return &protocol.Result{Action: payload.Action, Slot: payload.Slot, ExitCode: -1, Error: msg}
+	}
+
 	if !e.mu.TryLock() {
-		return &protocol.Result{
-			Action:   payload.Action,
-			Slot:     payload.Slot,
-			Success:  false,
-			ExitCode: -1,
-			Error:    "已有任务执行中",
-		}
+		return failed("已有任务执行中")
 	}
 	defer e.mu.Unlock()
 
 	args, err := e.buildArgs(payload)
 	if err != nil {
-		return &protocol.Result{
-			Action:   payload.Action,
-			Slot:     payload.Slot,
-			Success:  false,
-			ExitCode: -1,
-			Error:    err.Error(),
-		}
+		return failed(err.Error())
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, e.cfg.ExecTimeout)
 	defer cancel()
 
+	// stdout 和 stderr 合并到同一个管道，日志行的先后顺序与脚本输出一致
+	pr, pw := io.Pipe()
 	cmd := exec.CommandContext(ctx, e.cfg.ScriptPath, args...)
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return &protocol.Result{
-			Action:   payload.Action,
-			Slot:     payload.Slot,
-			Success:  false,
-			ExitCode: -1,
-			Error:    fmt.Sprintf("stdout 管道创建失败: %v", err),
-		}
-	}
+	cmd.Stdout, cmd.Stderr = pw, pw
+	killWithChildren(cmd) // 超时时连同子进程一起结束
+	cmd.WaitDelay = 5 * time.Second
 
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return &protocol.Result{
-			Action:   payload.Action,
-			Slot:     payload.Slot,
-			Success:  false,
-			ExitCode: -1,
-			Error:    fmt.Sprintf("stderr 管道创建失败: %v", err),
-		}
-	}
-
-	if err := cmd.Start(); err != nil {
-		return &protocol.Result{
-			Action:   payload.Action,
-			Slot:     payload.Slot,
-			Success:  false,
-			ExitCode: -1,
-			Error:    fmt.Sprintf("dst 脚本启动失败: %v", err),
-		}
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(2)
+	logsDone := make(chan struct{})
 	go func() {
-		defer wg.Done()
-		e.readOutput(stdout, onLog)
-	}()
-	go func() {
-		defer wg.Done()
-		e.readOutput(stderr, onLog)
+		defer close(logsDone)
+		e.readOutput(pr, onLog)
 	}()
 
-	stopClosing := context.AfterFunc(ctx, func() {
-		_ = stdout.Close()
-		_ = stderr.Close()
-	})
-	defer stopClosing()
+	runErr := cmd.Run()
+	_ = pw.Close()
+	<-logsDone
 
-	wg.Wait()
-	err = cmd.Wait()
-
-	result := &protocol.Result{
-		Action:   payload.Action,
-		Slot:     payload.Slot,
-		Success:  true,
-		ExitCode: 0,
-	}
-
-	if err != nil {
+	result := &protocol.Result{Action: payload.Action, Slot: payload.Slot}
+	if runErr != nil {
 		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			result.ExitCode = exitErr.ExitCode()
-		} else {
-			return &protocol.Result{
-				Action:   payload.Action,
-				Slot:     payload.Slot,
-				Success:  false,
-				ExitCode: -1,
-				Error:    fmt.Sprintf("脚本执行失败: %v", err),
-			}
+		if !errors.As(runErr, &exitErr) {
+			return failed(fmt.Sprintf("dst 脚本执行失败: %v", runErr))
 		}
+		result.ExitCode = exitErr.ExitCode()
 	}
 
 	if payload.Action == protocol.ActionStatus {

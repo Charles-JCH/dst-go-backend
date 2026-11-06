@@ -1,4 +1,4 @@
-package agent_client
+package agentclient
 
 import (
 	"context"

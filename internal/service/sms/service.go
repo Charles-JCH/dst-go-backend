@@ -17,7 +17,7 @@ import (
 
 type Service interface {
 	SendCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error
-	VerifyCode(ctx context.Context, phone, code string) (bool, error)
+	VerifyCode(ctx context.Context, scene, phone, code string) (bool, error)
 }
 
 type service struct {
@@ -25,6 +25,7 @@ type service struct {
 	smsCache  cache.SMSCache
 	smsClient sms.Client
 	smsLimit  cache.SMSLimit
+	policy    cache.SMSLimitPolicy
 }
 
 func NewService(
@@ -32,18 +33,20 @@ func NewService(
 	smsCache cache.SMSCache,
 	smsClient sms.Client,
 	smsLimit cache.SMSLimit,
+	policy cache.SMSLimitPolicy,
 ) Service {
 	return &service{
 		captcha:   captcha,
 		smsCache:  smsCache,
 		smsClient: smsClient,
 		smsLimit:  smsLimit,
+		policy:    policy,
 	}
 }
 
 func (s *service) SendCode(ctx context.Context, clientIP string, req *request.SendSMSCodeReq) error {
 	if clientIP == "" {
-		return apperr.NewBizError(400, "客户端 ip 缺失")
+		return apperr.NewBizError(400, "请求参数无效")
 	}
 
 	// 校验并销毁图形验证码
@@ -69,12 +72,7 @@ func (s *service) SendCode(ctx context.Context, clientIP string, req *request.Se
 		ctx,
 		clientIP,
 		req.Phone,
-		cache.SMSLimitPolicy{
-			IPMinute:    10,
-			PhoneMinute: 1,
-			IPDay:       50,
-			PhoneDay:    5,
-		},
+		s.policy,
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "短信发送额度检查失败", "error", err)
@@ -96,7 +94,7 @@ func (s *service) SendCode(ctx context.Context, clientIP string, req *request.Se
 		return apperr.NewBizError(503, "短信服务不可用")
 	}
 
-	if err := s.smsCache.SetCode(ctx, req.Phone, code, 5*time.Minute); err != nil {
+	if err := s.smsCache.SetCode(ctx, req.Scene, req.Phone, code, 5*time.Minute); err != nil {
 		// 尚未调用短信服务，可以退还本次额度。
 		if releaseErr := s.smsLimit.Release(ctx, reservation); releaseErr != nil {
 			slog.ErrorContext(ctx, "短信发送额度退还失败", "error", releaseErr)
@@ -116,9 +114,9 @@ func (s *service) SendCode(ctx context.Context, clientIP string, req *request.Se
 	return nil
 }
 
-func (s *service) VerifyCode(ctx context.Context, phone, code string) (bool, error) {
-	// 限流
-	valid, err := s.smsCache.ConsumeCode(ctx, phone, code)
+func (s *service) VerifyCode(ctx context.Context, scene, phone, code string) (bool, error) {
+	// 验证码按场景隔离，且错误次数受限
+	valid, err := s.smsCache.ConsumeCode(ctx, scene, phone, code)
 	if errors.Is(err, cache.ErrSMSCodeAttemptsExceeded) {
 		return false, apperr.NewBizError(400, "短信验证码已连续输错 3 次")
 	}

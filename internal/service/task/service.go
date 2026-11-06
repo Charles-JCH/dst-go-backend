@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"game-panel/internal/apperr"
-	"game-panel/internal/model/entity"
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
 	"game-panel/internal/repository/task"
@@ -36,26 +35,6 @@ func (s *service) GetByID(ctx context.Context, userID uint64, taskID uint64) (*r
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListTaskReq) (*response.TaskListResp, error) {
-	if req == nil ||
-		req.Page < 1 || req.Page > 1000000 ||
-		req.PageSize < 1 || req.PageSize > 100 {
-		return nil, apperr.NewBizError(400, "分页参数无效")
-	}
-
-	if len(req.Type) > 64 || len(req.ResourceType) > 64 {
-		return nil, apperr.NewBizError(400, "查询参数无效")
-	}
-
-	switch req.Status {
-	case "",
-		entity.TaskStatusPending,
-		entity.TaskStatusRunning,
-		entity.TaskStatusSucceeded,
-		entity.TaskStatusFailed:
-	default:
-		return nil, apperr.NewBizError(400, "任务状态无效")
-	}
-
 	if req.ResourceID != 0 && req.ResourceType == "" {
 		return nil, apperr.NewBizError(400, "指定资源ID时必须指定资源类型")
 	}

@@ -1,4 +1,4 @@
-package agent_manager
+package agentmanager
 
 import (
 	"context"
@@ -117,7 +117,7 @@ func (h *Handler) readLoop(ctx context.Context, serverID uint64, conn *websocket
 			var l protocol.Log
 			if err := json.Unmarshal(env.Payload, &l); err != nil {
 				slog.WarnContext(ctx, "执行日志解析失败", "serverID", serverID, "commandID", env.ID, "error", err)
-				return
+				continue
 			}
 			h.service.HandleLog(serverID, env.ID, l)
 		case protocol.TypeResult:

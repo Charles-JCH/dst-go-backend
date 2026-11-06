@@ -2,9 +2,9 @@ package database
 
 import (
 	"fmt"
-	"game-panel/internal/platform/logger"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"os"
 	"path/filepath"
 	"time"
@@ -16,7 +16,7 @@ type SQLiteConfig struct {
 	MaxOpenConns    int
 	ConnMaxLifetime time.Duration
 	ConnMaxIdleTime time.Duration
-	LogLevel        string
+	Logger          logger.Interface
 }
 
 func NewSQLite(cfg *SQLiteConfig) (*gorm.DB, error) {
@@ -28,11 +28,9 @@ func NewSQLite(cfg *SQLiteConfig) (*gorm.DB, error) {
 	// 开启 WAL 模式
 	dsn := fmt.Sprintf("%s?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=synchronous(NORMAL)", cfg.DBPath)
 
-	gormLogger := logger.NewGormLogger(cfg.LogLevel, 200*time.Millisecond, true)
-
 	// 打开 SQLite 连接
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
-		Logger:         gormLogger,
+		Logger:         cfg.Logger,
 		TranslateError: true,
 	})
 	if err != nil {

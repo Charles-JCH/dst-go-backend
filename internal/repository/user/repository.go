@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var ErrTokenVersionConflict = errors.New("用户令牌版本已变更")
+
 type Repository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByID(ctx context.Context, userID uint64) (*entity.User, error)
@@ -18,8 +20,6 @@ type Repository interface {
 	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error
 }
 
-var ErrTokenVersionConflict = errors.New("用户令牌版本已变更")
-
 type repository struct {
 	db *gorm.DB
 }
@@ -28,73 +28,29 @@ func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
 }
 
-func (r *repository) getDB(ctx context.Context) *gorm.DB {
-	return repo.GetDBFromCtx(ctx, r.db)
-}
-
 // Create 创建新用户
 func (r *repository) Create(ctx context.Context, user *entity.User) error {
-	return r.getDB(ctx).Create(user).Error
+	return repo.WrapError(r.getDB(ctx).Create(user).Error)
 }
 
 // GetByID 根据用户 ID 查询
 func (r *repository) GetByID(ctx context.Context, userID uint64) (*entity.User, error) {
-	var user entity.User
-	err := r.getDB(ctx).
-		Where("id = ?", userID).
-		First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return repo.First[entity.User](r.getDB(ctx), "id = ?", userID)
 }
 
 // GetByUsername 根据用户名查询
 func (r *repository) GetByUsername(ctx context.Context, username string) (*entity.User, error) {
-	var user entity.User
-	err := r.getDB(ctx).
-		Where("username = ?", username).
-		First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return repo.First[entity.User](r.getDB(ctx), "username = ?", username)
 }
 
 // GetByPhone 根据手机号查询
 func (r *repository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
-	var user entity.User
-	err := r.getDB(ctx).
-		Where("phone = ?", phone).
-		First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return repo.First[entity.User](r.getDB(ctx), "phone = ?", phone)
 }
 
 // GetByEmail 根据邮箱查询
 func (r *repository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
-	var user entity.User
-	err := r.getDB(ctx).
-		Where("email = ?", email).
-		First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return repo.First[entity.User](r.getDB(ctx), "email = ?", email)
 }
 
 // Update 更新用户名
@@ -104,7 +60,7 @@ func (r *repository) Update(ctx context.Context, userID uint64, username string)
 		Where("id = ?", userID).
 		Update("username", username)
 	if result.Error != nil {
-		return result.Error
+		return repo.WrapError(result.Error)
 	}
 	if result.RowsAffected > 0 {
 		return nil
@@ -114,7 +70,7 @@ func (r *repository) Update(ctx context.Context, userID uint64, username string)
 		return err
 	}
 	if user == nil {
-		return gorm.ErrRecordNotFound
+		return repo.ErrNotFound
 	}
 	return nil
 }
@@ -129,7 +85,7 @@ func (r *repository) UpdatePassword(ctx context.Context, userID uint64, password
 			"token_version": gorm.Expr("token_version + 1"),
 		})
 	if result.Error != nil {
-		return result.Error
+		return repo.WrapError(result.Error)
 	}
 	if result.RowsAffected > 0 {
 		return nil
@@ -139,7 +95,11 @@ func (r *repository) UpdatePassword(ctx context.Context, userID uint64, password
 		return err
 	}
 	if user == nil {
-		return gorm.ErrRecordNotFound
+		return repo.ErrNotFound
 	}
 	return ErrTokenVersionConflict
+}
+
+func (r *repository) getDB(ctx context.Context) *gorm.DB {
+	return repo.GetDBFromCtx(ctx, r.db)
 }

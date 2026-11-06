@@ -1,4 +1,4 @@
-package agent_manager
+package agentmanager
 
 import (
 	"fmt"

@@ -1,71 +1,59 @@
 package router
 
 import (
-	"game-panel/internal/agent_manager"
-	authhandler "game-panel/internal/handler/v1/auth"
-	"game-panel/internal/handler/v1/dst"
-	"game-panel/internal/handler/v1/server"
-	"game-panel/internal/handler/v1/task"
-	"game-panel/internal/middleware"
-	authservice "game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterV1Routes(
-	r *gin.Engine,
-	authService authservice.Service,
-	authHandler *authhandler.Handler,
-	serverHandler *server.Handler,
-	dstHandler *dst.Handler,
-	taskHandler *task.Handler,
-	agentHandler *agent_manager.Handler,
-	rateLimit gin.HandlerFunc,
-) {
-	v1Group := r.Group("/api/v1")
-	rateLimitGroup := v1Group.Group("", rateLimit)
+func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc) {
+	v1 := r.Group("/api/v1")
+	public := v1.Group("", rateLimit)
 
-	authGroup := rateLimitGroup.Group("/auth")
+	authGroup := public.Group("/auth")
 	{
-		authGroup.GET("/captcha", authHandler.GetCaptcha)
-		authGroup.POST("/sms-code", authHandler.SendSMSCode)
-		authGroup.POST("/register", authHandler.Register)
-		authGroup.POST("/login", authHandler.Login)
-		authGroup.POST("/login/sms", authHandler.LoginBySMS)
-		authGroup.POST("/refresh", authHandler.RefreshToken)
-		authGroup.POST("/logout", authHandler.Logout)
-		authGroup.POST("/password/verify", authHandler.VerifyResetCode)
-		authGroup.POST("/password/reset", authHandler.ResetPassword)
+		authGroup.GET("/captcha", h.Auth.GetCaptcha)
+		authGroup.POST("/sms-code", h.Auth.SendSMSCode)
+		authGroup.POST("/register", h.Auth.Register)
+		authGroup.POST("/login", h.Auth.Login)
+		authGroup.POST("/login/sms", h.Auth.LoginBySMS)
+		authGroup.POST("/refresh", h.Auth.RefreshToken)
+		authGroup.POST("/logout", h.Auth.Logout)
+		authGroup.POST("/password/verify", h.Auth.VerifyResetCode)
+		authGroup.POST("/password/reset", h.Auth.ResetPassword)
 	}
 
-	protected := rateLimitGroup.Group("")
-	protected.Use(middleware.Auth(authService))
+	protected := public.Group("", auth)
 	{
-		protected.GET("/auth/profile", authHandler.GetProfile)
+		protected.GET("/auth/profile", h.Auth.GetProfile)
+		protected.GET("/game-env", h.GameEnv.List)
+
 		serverGroup := protected.Group("/server")
 		{
-			serverGroup.POST("", serverHandler.Create)
-			serverGroup.GET("", serverHandler.List)
-			serverGroup.GET("/:id", serverHandler.GetByID)
-			serverGroup.PUT("/:id", serverHandler.Update)
-			serverGroup.DELETE("/:id", serverHandler.Delete)
+			serverGroup.POST("", h.Server.Create)
+			serverGroup.GET("", h.Server.List)
+			serverGroup.GET("/:id", h.Server.GetByID)
+			serverGroup.PUT("/:id", h.Server.Update)
+			serverGroup.DELETE("/:id", h.Server.Delete)
 		}
+
 		dstGroup := protected.Group("/dst")
 		{
-			dstGroup.POST("", dstHandler.Create)
-			dstGroup.GET("", dstHandler.List)
-			dstGroup.GET("/:id", dstHandler.GetByID)
-			dstGroup.PUT("/:id", dstHandler.Update)
-			dstGroup.DELETE("/:id", dstHandler.Delete)
+			dstGroup.POST("", h.Dst.Create)
+			dstGroup.GET("", h.Dst.List)
+			dstGroup.GET("/:id", h.Dst.GetByID)
+			dstGroup.PUT("/:id", h.Dst.Update)
+			dstGroup.DELETE("/:id", h.Dst.Delete)
 		}
+
 		taskGroup := protected.Group("/tasks")
 		{
-			taskGroup.GET("", taskHandler.List)
-			taskGroup.GET("/:id", taskHandler.GetByID)
+			taskGroup.GET("", h.Task.List)
+			taskGroup.GET("/:id", h.Task.GetByID)
 		}
 	}
 
-	agentGroup := v1Group.Group("/agent")
+	// Agent 使用自己的令牌认证，不走用户鉴权和 IP 限流
+	agentGroup := v1.Group("/agent")
 	{
-		agentGroup.GET("/ws", agentHandler.ServeWS)
+		agentGroup.GET("/ws", h.Agent.ServeWS)
 	}
 }

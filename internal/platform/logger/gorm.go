@@ -95,6 +95,10 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	slog.LogAttrs(ctx, level, message, attrs...)
 }
 
+func (l *GormLogger) ParamsFilter(_ context.Context, sql string, _ ...interface{}) (string, []interface{}) {
+	return sql, nil
+}
+
 func parseGormLogLevel(level string) logger.LogLevel {
 	switch strings.ToLower(level) {
 	case "silent":
@@ -108,8 +112,4 @@ func parseGormLogLevel(level string) logger.LogLevel {
 	default:
 		return logger.Info
 	}
-}
-
-func (l *GormLogger) ParamsFilter(_ context.Context, sql string, _ ...interface{}) (string, []interface{}) {
-	return sql, nil
 }
