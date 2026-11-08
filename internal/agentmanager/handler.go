@@ -104,7 +104,16 @@ func (h *Handler) readLoop(ctx context.Context, serverID uint64, conn *websocket
 
 		switch env.Type {
 		case protocol.TypePing:
-			continue
+			// 旧版本 Agent 的心跳不带资源使用情况
+			if len(env.Payload) == 0 {
+				continue
+			}
+			var m protocol.Metrics
+			if err := json.Unmarshal(env.Payload, &m); err != nil {
+				slog.WarnContext(ctx, "资源使用情况解析失败", "serverID", serverID, "error", err)
+				continue
+			}
+			h.service.HandleMetrics(serverID, m)
 		case protocol.TypeAck:
 			var ack protocol.Ack
 			if err := json.Unmarshal(env.Payload, &ack); err != nil {

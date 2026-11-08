@@ -3,6 +3,7 @@ package protocol
 import "encoding/json"
 
 const (
+	// TypePing Agent 心跳，payload 为 Metrics（旧版本 Agent 不带 payload）
 	TypePing    = "ping"
 	TypeCommand = "command"
 	TypeAck     = "ack"
@@ -50,6 +51,16 @@ type SysInfo struct {
 	Disk   int64  `json:"disk"`
 	OSName string `json:"osName"`
 	Arch   string `json:"arch"`
+}
+
+// Metrics 资源使用情况，随心跳上报；ramUsed、diskUsed 单位为字节，netRx、netTx 单位为字节/秒
+type Metrics struct {
+	CPUPercent float64 `json:"cpuPercent"`
+	RAMUsed    int64   `json:"ramUsed"`
+	DiskUsed   int64   `json:"diskUsed"`
+	Load1      float64 `json:"load1"`
+	NetRx      int64   `json:"netRx"`
+	NetTx      int64   `json:"netTx"`
 }
 
 type Result struct {

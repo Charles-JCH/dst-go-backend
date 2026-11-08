@@ -114,6 +114,7 @@ func Run(configPath string) error {
 	authCache := cache.NewAuthCache(rdb)
 	smsCache := cache.NewSMSCache(rdb)
 	smsLimit := cache.NewSMSLimit(rdb)
+	metricsCache := cache.NewMetricsCache(rdb)
 
 	agentService := agentmanager.NewService(agentHub)
 
@@ -132,7 +133,7 @@ func Run(configPath string) error {
 		agentService,
 		realtimeHub,
 	)
-	serverService := serverservice.NewService(serverRepo, taskRepo, txManager, encryptor, agentInstaller, agentService)
+	serverService := serverservice.NewService(serverRepo, taskRepo, metricsCache, txManager, encryptor, agentInstaller, agentService)
 	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentService)
 	taskService := taskservice.NewService(taskRepo)
 
@@ -146,11 +147,12 @@ func Run(configPath string) error {
 
 	// agent
 	agentAuth := agentmanager.NewAuth(jwtManager, serverRepo)
-	agentEvents := agentevent.NewService(serverRepo, realtimeHub)
+	agentEvents := agentevent.NewService(serverRepo, metricsCache, realtimeHub)
 	agentService.OnAck = agentEvents.OnAck
 	agentService.OnLog = agentEvents.OnLog
 	agentService.OnResult = agentEvents.OnResult
 	agentService.OnSysInfo = agentEvents.OnSysInfo
+	agentService.OnMetrics = agentEvents.OnMetrics
 	agentService.OnInterrupted = agentEvents.OnInterrupted
 	agentService.OnOnline = agentEvents.OnOnline
 	agentService.OnOffline = agentEvents.OnOffline

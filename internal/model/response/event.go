@@ -6,6 +6,7 @@ const (
 	EventTaskLog     = "task_log"     // 任务新增日志，data 为 TaskLogResp
 	EventAgentStatus = "agent_status" // Agent 上线或下线，data 为 AgentStatusResp
 	EventSysInfo     = "sysinfo"      // Agent 上报了服务器系统配置，data 为 SysInfoResp
+	EventMetrics     = "metrics"      // Agent 随心跳上报了资源使用情况，data 为 ServerMetricsResp
 )
 
 type AgentStatusResp struct {
@@ -21,4 +22,10 @@ type SysInfoResp struct {
 	Disk     int64  `json:"disk"`
 	OSName   string `json:"osName"`
 	Arch     string `json:"arch"`
+}
+
+// ServerMetricsResp 某台服务器最新的资源使用情况
+type ServerMetricsResp struct {
+	ServerID uint64 `json:"serverID"`
+	MetricsResp
 }

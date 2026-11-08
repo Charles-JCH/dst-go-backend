@@ -9,13 +9,18 @@ import (
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
 	"game-panel/internal/repository"
+	"game-panel/internal/repository/cache"
 	serverrepo "game-panel/internal/repository/server"
 	taskrepo "game-panel/internal/repository/task"
 	"game-panel/internal/service/agentinstall"
 	"log/slog"
 	"net/netip"
 	"strings"
+	"time"
 )
+
+// metricsFreshness 最近一次资源使用情况超过这个时间视为过期，不返回（心跳间隔 30 秒）
+const metricsFreshness = 2 * time.Minute
 
 type Service interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error)
@@ -24,6 +29,8 @@ type Service interface {
 	Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
 	InstallAgent(ctx context.Context, userID uint64, serverID uint64) (*response.TaskResp, error)
+	// ListMetrics 最近 24 小时的资源使用情况，按时间升序
+	ListMetrics(ctx context.Context, userID uint64, serverID uint64) (*response.MetricsListResp, error)
 }
 
 // AgentConn 查询、卸载和断开 Agent（agentmanager.Service 未导出接口）
@@ -35,29 +42,32 @@ type AgentConn interface {
 }
 
 type service struct {
-	serverRepo serverrepo.Repository
-	taskRepo   taskrepo.Repository
-	txManager  repository.Transaction
-	encryptor  crypto.Encryptor
-	installer  agentinstall.Service
-	agent      AgentConn
+	serverRepo   serverrepo.Repository
+	taskRepo     taskrepo.Repository
+	metricsCache cache.MetricsCache
+	txManager    repository.Transaction
+	encryptor    crypto.Encryptor
+	installer    agentinstall.Service
+	agent        AgentConn
 }
 
 func NewService(
 	serverRepo serverrepo.Repository,
 	taskRepo taskrepo.Repository,
+	metricsCache cache.MetricsCache,
 	txManager repository.Transaction,
 	encryptor crypto.Encryptor,
 	installer agentinstall.Service,
 	agent AgentConn,
 ) Service {
 	return &service{
-		serverRepo: serverRepo,
-		taskRepo:   taskRepo,
-		txManager:  txManager,
-		encryptor:  encryptor,
-		installer:  installer,
-		agent:      agent,
+		serverRepo:   serverRepo,
+		taskRepo:     taskRepo,
+		metricsCache: metricsCache,
+		txManager:    txManager,
+		encryptor:    encryptor,
+		installer:    installer,
+		agent:        agent,
 	}
 }
 
@@ -109,7 +119,7 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 	}
 
 	s.installer.Enqueue(installTask.ID)
-	return s.toResp(server), nil
+	return &s.toResps(ctx, []entity.Server{*server})[0], nil
 }
 
 func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error) {
@@ -121,7 +131,7 @@ func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (
 	if server == nil {
 		return nil, apperr.NewBizError(404, "服务器不存在")
 	}
-	return s.toResp(server), nil
+	return &s.toResps(ctx, []entity.Server{*server})[0], nil
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
@@ -130,12 +140,8 @@ func (s *service) List(ctx context.Context, userID uint64, req *request.ListServ
 		slog.ErrorContext(ctx, "服务器列表查询失败", "userID", userID, "error", err)
 		return nil, apperr.NewBizError(500, "服务器列表查询失败")
 	}
-	list := make([]response.ServerResp, 0, len(servers))
-	for i := range servers {
-		list = append(list, *s.toResp(&servers[i]))
-	}
 	return &response.ServerListResp{
-		List:     list,
+		List:     s.toResps(ctx, servers),
 		Total:    total,
 		Page:     req.Page,
 		PageSize: req.PageSize,
@@ -224,6 +230,9 @@ func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) er
 		}
 	}
 	s.agent.Disconnect(serverID)
+	if err := s.metricsCache.Delete(ctx, serverID); err != nil {
+		slog.WarnContext(ctx, "资源使用情况清理失败", "serverID", serverID, "error", err)
+	}
 	return nil
 }
 
@@ -259,6 +268,28 @@ func (s *service) InstallAgent(ctx context.Context, userID uint64, serverID uint
 	return response.ToTaskResp(installTask), nil
 }
 
+func (s *service) ListMetrics(ctx context.Context, userID uint64, serverID uint64) (*response.MetricsListResp, error) {
+	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
+		return nil, apperr.NewBizError(500, "资源使用情况查询失败")
+	}
+	if server == nil {
+		return nil, apperr.NewBizError(404, "服务器不存在")
+	}
+
+	metrics, err := s.metricsCache.List(ctx, serverID, time.Now().Add(-cache.MetricsRetention))
+	if err != nil {
+		slog.ErrorContext(ctx, "资源使用情况查询失败", "serverID", serverID, "error", err)
+		return nil, apperr.NewBizError(500, "资源使用情况查询失败")
+	}
+	list := make([]response.MetricsResp, 0, len(metrics))
+	for i := range metrics {
+		list = append(list, *response.ToMetricsResp(&metrics[i]))
+	}
+	return &response.MetricsListResp{List: list}, nil
+}
+
 // newInstallTask 创建待执行的 Agent 安装任务；ActiveKey 保证同一服务器同时只有一个安装任务
 func newInstallTask(userID uint64, serverID uint64) *entity.Task {
 	return &entity.Task{
@@ -273,8 +304,28 @@ func newInstallTask(userID uint64, serverID uint64) *entity.Task {
 	}
 }
 
-func (s *service) toResp(server *entity.Server) *response.ServerResp {
-	return response.ToServerResp(server, s.agent.IsOnline(server.ID))
+// toResps 转换为响应，并附上在线服务器最近一次的资源使用情况；读取失败时不附带，不影响列表
+func (s *service) toResps(ctx context.Context, servers []entity.Server) []response.ServerResp {
+	onlineIDs := make([]uint64, 0, len(servers))
+	for i := range servers {
+		if s.agent.IsOnline(servers[i].ID) {
+			onlineIDs = append(onlineIDs, servers[i].ID)
+		}
+	}
+	latest, err := s.metricsCache.Latest(ctx, onlineIDs)
+	if err != nil {
+		slog.WarnContext(ctx, "资源使用情况查询失败", "error", err)
+	}
+
+	list := make([]response.ServerResp, 0, len(servers))
+	for i := range servers {
+		var metrics *entity.ServerMetrics
+		if m, ok := latest[servers[i].ID]; ok && time.Since(m.Time) <= metricsFreshness {
+			metrics = &m
+		}
+		list = append(list, *response.ToServerResp(&servers[i], s.agent.IsOnline(servers[i].ID), metrics))
+	}
+	return list
 }
 
 func (s *service) hasActiveInstall(ctx context.Context, userID uint64, serverID uint64) (bool, error) {

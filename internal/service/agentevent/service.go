@@ -3,13 +3,16 @@ package agentevent
 import (
 	"context"
 	"errors"
+	"game-panel/internal/model/entity"
 	"game-panel/internal/model/response"
 	"game-panel/internal/protocol"
 	"game-panel/internal/repository"
+	"game-panel/internal/repository/cache"
 	serverrepo "game-panel/internal/repository/server"
 	"log/slog"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 )
@@ -29,6 +32,7 @@ type Service interface {
 	OnLog(serverID uint64, id string, line protocol.Log)
 	OnResult(serverID uint64, id string, result protocol.Result)
 	OnSysInfo(serverID uint64, info protocol.SysInfo)
+	OnMetrics(serverID uint64, metrics protocol.Metrics)
 	OnInterrupted(serverID uint64, id string, reason string)
 	OnOnline(serverID uint64)
 	OnOffline(serverID uint64)
@@ -40,12 +44,15 @@ type Notifier interface {
 }
 
 type service struct {
-	serverRepo serverrepo.Repository
-	notifier   Notifier
+	serverRepo   serverrepo.Repository
+	metricsCache cache.MetricsCache
+	notifier     Notifier
+	// owners 在线服务器的所属用户 serverID → userID，心跳每 30 秒一次，避免每次都查库；Agent 下线时删除
+	owners sync.Map
 }
 
-func NewService(serverRepo serverrepo.Repository, notifier Notifier) Service {
-	return &service{serverRepo: serverRepo, notifier: notifier}
+func NewService(serverRepo serverrepo.Repository, metricsCache cache.MetricsCache, notifier Notifier) Service {
+	return &service{serverRepo: serverRepo, metricsCache: metricsCache, notifier: notifier}
 }
 
 func (s *service) OnAck(serverID uint64, id string, ack protocol.Ack) {
@@ -90,18 +97,37 @@ func (s *service) OnSysInfo(serverID uint64, info protocol.SysInfo) {
 		return
 	}
 
-	server, err := s.serverRepo.FindByID(ctx, serverID)
-	if err != nil || server == nil {
-		slog.WarnContext(ctx, "服务器查询失败，跳过配置推送", "serverID", serverID, "error", err)
+	userID, ok := s.ownerID(ctx, serverID)
+	if !ok {
 		return
 	}
-	s.notifier.Publish(server.UserID, response.EventSysInfo, response.SysInfoResp{
+	s.notifier.Publish(userID, response.EventSysInfo, response.SysInfoResp{
 		ServerID: serverID,
 		CPU:      fields.CPU,
 		RAM:      fields.RAM,
 		Disk:     fields.Disk,
 		OSName:   fields.OSName,
 		Arch:     fields.Arch,
+	})
+}
+
+// OnMetrics 保存 Agent 随心跳上报的资源使用情况并推送给服务器所属用户；Agent 不可信，保存前校验
+func (s *service) OnMetrics(serverID uint64, metrics protocol.Metrics) {
+	ctx, cancel := context.WithTimeout(context.Background(), queryTimeout)
+	defer cancel()
+
+	userID, ok := s.ownerID(ctx, serverID)
+	if !ok {
+		return
+	}
+	m := sanitizeMetrics(metrics, time.Now())
+	// 保存失败只影响历史曲线，仍然推送最新值
+	if err := s.metricsCache.Add(ctx, serverID, m); err != nil {
+		slog.WarnContext(ctx, "资源使用情况保存失败", "serverID", serverID, "error", err)
+	}
+	s.notifier.Publish(userID, response.EventMetrics, response.ServerMetricsResp{
+		ServerID:    serverID,
+		MetricsResp: *response.ToMetricsResp(&m),
 	})
 }
 
@@ -121,6 +147,7 @@ func (s *service) OnOnline(serverID uint64) {
 func (s *service) OnOffline(serverID uint64) {
 	slog.Info("agent 下线", "serverID", serverID)
 	s.publishStatus(serverID, false)
+	s.owners.Delete(serverID)
 }
 
 // publishStatus 把在线状态推送给服务器所属用户；服务器已删除时不推送
@@ -128,15 +155,28 @@ func (s *service) publishStatus(serverID uint64, isOnline bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), queryTimeout)
 	defer cancel()
 
+	userID, ok := s.ownerID(ctx, serverID)
+	if !ok {
+		return
+	}
+	s.notifier.Publish(userID, response.EventAgentStatus, response.AgentStatusResp{ServerID: serverID, IsOnline: isOnline})
+}
+
+// ownerID 查询服务器所属用户，结果缓存到 Agent 下线；服务器已删除或查询失败时返回 false
+func (s *service) ownerID(ctx context.Context, serverID uint64) (uint64, bool) {
+	if userID, ok := s.owners.Load(serverID); ok {
+		return userID.(uint64), true
+	}
 	server, err := s.serverRepo.FindByID(ctx, serverID)
 	if err != nil {
-		slog.WarnContext(ctx, "服务器查询失败，跳过 agent 状态推送", "serverID", serverID, "error", err)
-		return
+		slog.WarnContext(ctx, "服务器查询失败，跳过推送", "serverID", serverID, "error", err)
+		return 0, false
 	}
 	if server == nil {
-		return
+		return 0, false
 	}
-	s.notifier.Publish(server.UserID, response.EventAgentStatus, response.AgentStatusResp{ServerID: serverID, IsOnline: isOnline})
+	s.owners.Store(serverID, server.UserID)
+	return server.UserID, true
 }
 
 // sanitizeSysInfo 超出范围的数值置 0，系统名称截断到列宽，架构名不合法时置空
@@ -158,4 +198,17 @@ func sanitizeSysInfo(info protocol.SysInfo) serverrepo.SysInfoFields {
 		fields.Arch = ""
 	}
 	return fields
+}
+
+// sanitizeMetrics 数值限制在合理范围内：使用率 0～100，其余不小于 0
+func sanitizeMetrics(m protocol.Metrics, now time.Time) entity.ServerMetrics {
+	return entity.ServerMetrics{
+		Time:       now,
+		CPUPercent: min(max(m.CPUPercent, 0), 100),
+		RAMUsed:    max(m.RAMUsed, 0),
+		DiskUsed:   max(m.DiskUsed, 0),
+		Load1:      max(m.Load1, 0),
+		NetRx:      max(m.NetRx, 0),
+		NetTx:      max(m.NetTx, 0),
+	}
 }

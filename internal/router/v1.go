@@ -34,6 +34,7 @@ func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc
 			serverGroup.PUT("/:id", h.Server.Update)
 			serverGroup.DELETE("/:id", h.Server.Delete)
 			serverGroup.POST("/:id/agent/install", h.Server.InstallAgent)
+			serverGroup.GET("/:id/metrics", h.Server.ListMetrics)
 		}
 
 		dstGroup := protected.Group("/dst")

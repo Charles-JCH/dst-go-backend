@@ -18,6 +18,7 @@ type Client struct {
 	identity IdentityConfig
 	service  ServiceConfig
 	sysInfo  SysInfoConfig
+	metrics  *MetricsCollector
 	executor *Executor
 	token    string
 	writeMu  sync.Mutex
@@ -29,6 +30,7 @@ func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, serviceCfg Se
 		identity: identityCfg,
 		service:  serviceCfg,
 		sysInfo:  sysInfoCfg,
+		metrics:  NewMetricsCollector(sysInfoCfg.DiskPath),
 		executor: exec,
 	}
 }
@@ -195,7 +197,8 @@ func (c *Client) heartbeatLoop(ctx context.Context, conn *websocket.Conn) error 
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-ticker.C:
-			if err := c.send(conn, "", protocol.TypePing, nil); err != nil {
+			// 心跳顺带上报资源使用情况
+			if err := c.send(conn, "", protocol.TypePing, c.metrics.Collect()); err != nil {
 				return fmt.Errorf("心跳发送失败: %w", err)
 			}
 		}
