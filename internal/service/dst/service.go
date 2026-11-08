@@ -3,14 +3,17 @@ package dst
 import (
 	"context"
 	"errors"
+	"fmt"
 	"game-panel/internal/apperr"
 	"game-panel/internal/model/entity"
 	"game-panel/internal/model/request"
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
+	"game-panel/internal/protocol"
 	"game-panel/internal/repository"
 	dstrepo "game-panel/internal/repository/dst"
 	serverrepo "game-panel/internal/repository/server"
+	"game-panel/internal/service/agentcommand"
 	"log/slog"
 	"strings"
 )
@@ -26,26 +29,21 @@ type Service interface {
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
-// AgentCommander 向服务器上的 Agent 下发命令
-type AgentCommander interface {
-	Delete(serverID uint64, slot int) (string, error)
-}
-
 type service struct {
 	dstRepo    dstrepo.Repository
 	serverRepo serverrepo.Repository
 	txManager  repository.Transaction
 	encryptor  crypto.Encryptor
-	agent      AgentCommander
+	commands   agentcommand.Service
 }
 
-func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, agent AgentCommander) Service {
+func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, commands agentcommand.Service) Service {
 	return &service{
 		dstRepo:    dstRepo,
 		serverRepo: serverRepo,
 		txManager:  txManager,
 		encryptor:  encryptor,
-		agent:      agent,
+		commands:   commands,
 	}
 }
 
@@ -207,9 +205,18 @@ func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error
 		return apperr.NewBizError(500, "存档删除失败")
 	}
 
-	// 通知 Agent 清理服务器上的存档文件
-	if _, err := s.agent.Delete(dst.ServerID, dst.Slot); err != nil {
-		slog.WarnContext(ctx, "Agent 存档清理命令下发失败", "serverID", dst.ServerID, "slot", dst.Slot, "error", err)
+	// 通知 Agent 清理服务器上的存档文件，结果在任务中查看；Agent 离线或正忙时只删除记录，文件需手动清理
+	_, err = s.commands.Dispatch(ctx, agentcommand.Command{
+		UserID:       userID,
+		ServerID:     dst.ServerID,
+		TaskType:     entity.TaskTypeDstDelete,
+		TaskName:     fmt.Sprintf("清理存档文件（槽位 %d）", dst.Slot),
+		ResourceType: entity.TaskResourceDst,
+		ResourceID:   dstID,
+		Payload:      protocol.CmdPayload{Action: protocol.ActionDelete, Slot: dst.Slot},
+	})
+	if err != nil {
+		slog.WarnContext(ctx, "存档清理命令下发失败", "serverID", dst.ServerID, "slot", dst.Slot, "error", err)
 	}
 	return nil
 }

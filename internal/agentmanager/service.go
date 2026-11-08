@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"game-panel/internal/protocol"
-	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -44,34 +43,13 @@ func NewService(hub *Hub) *Service {
 	return s
 }
 
-func (s *Service) Deploy(serverID uint64) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionDeploy})
-}
-
-func (s *Service) Init(serverID uint64, slot int, clusterToken string) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{
-		Action: protocol.ActionInit, Slot: slot, ClusterToken: clusterToken,
-	})
-}
-
-func (s *Service) Start(serverID uint64, slot int) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionStart, Slot: slot})
-}
-
-func (s *Service) Stop(serverID uint64, slot int) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionStop, Slot: slot})
-}
-
-func (s *Service) Update(serverID uint64) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionUpdate})
-}
-
-func (s *Service) Delete(serverID uint64, slot int) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionDelete, Slot: slot})
-}
-
-func (s *Service) Status(serverID uint64, slot int) (string, error) {
-	return s.send(serverID, protocol.CmdPayload{Action: protocol.ActionStatus, Slot: slot})
+// Send 下发命令；commandID 由调用方生成并先保存到任务，Agent 回传的确认、日志和结果都带着它
+func (s *Service) Send(serverID uint64, commandID string, payload protocol.CmdPayload) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("命令序列化失败: %w", err)
+	}
+	return s.hub.Send(serverID, protocol.Envelope{ID: commandID, Type: protocol.TypeCommand, Payload: data})
 }
 
 func (s *Service) IsOnline(serverID uint64) bool {
@@ -133,20 +111,4 @@ func (s *Service) HandleMetrics(serverID uint64, metrics protocol.Metrics) {
 	if s.OnMetrics != nil {
 		s.OnMetrics(serverID, metrics)
 	}
-}
-
-func (s *Service) send(serverID uint64, payload protocol.CmdPayload) (string, error) {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("命令序列化失败: %w", err)
-	}
-	env := protocol.Envelope{
-		ID:      uuid.NewString(),
-		Type:    protocol.TypeCommand,
-		Payload: data,
-	}
-	if err := s.hub.Send(serverID, env); err != nil {
-		return "", err
-	}
-	return env.ID, nil
 }

@@ -25,11 +25,13 @@ import (
 	taskrepo "game-panel/internal/repository/task"
 	"game-panel/internal/repository/user"
 	"game-panel/internal/router"
+	"game-panel/internal/service/agentcommand"
 	"game-panel/internal/service/agentevent"
 	"game-panel/internal/service/agentinstall"
 	authservice "game-panel/internal/service/auth"
 	captchaservice "game-panel/internal/service/captcha"
 	dstservice "game-panel/internal/service/dst"
+	gamedeployservice "game-panel/internal/service/gamedeploy"
 	gameenvservice "game-panel/internal/service/gameenv"
 	serverservice "game-panel/internal/service/server"
 	smsservice "game-panel/internal/service/sms"
@@ -117,6 +119,7 @@ func Run(configPath string) error {
 	metricsCache := cache.NewMetricsCache(rdb)
 
 	agentService := agentmanager.NewService(agentHub)
+	agentCommands := agentcommand.NewService(taskRepo, agentService, realtimeHub)
 
 	// service
 	captchaService := captchaservice.NewService(captchaManager)
@@ -134,13 +137,14 @@ func Run(configPath string) error {
 		realtimeHub,
 	)
 	serverService := serverservice.NewService(serverRepo, taskRepo, metricsCache, txManager, encryptor, agentInstaller, agentService)
-	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentService)
+	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentCommands)
 	taskService := taskservice.NewService(taskRepo)
+	deployService := gamedeployservice.NewService(serverRepo, gameEnvRepo, agentCommands)
 
 	// handler
 	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.IsCookieSecure)
 	gameEnvHandler := gameenvhandler.NewHandler(gameEnvService)
-	serverHandler := serverhandler.NewHandler(serverService)
+	serverHandler := serverhandler.NewHandler(serverService, deployService)
 	dstHandler := dsthandler.NewHandler(dstService)
 	taskHandler := taskhandler.NewHandler(taskService)
 	realtimeHandler := realtime.NewHandler(realtimeHub, authService, cfg.Server.AllowedOrigins)
@@ -148,12 +152,12 @@ func Run(configPath string) error {
 	// agent
 	agentAuth := agentmanager.NewAuth(jwtManager, serverRepo)
 	agentEvents := agentevent.NewService(serverRepo, metricsCache, realtimeHub)
-	agentService.OnAck = agentEvents.OnAck
-	agentService.OnLog = agentEvents.OnLog
-	agentService.OnResult = agentEvents.OnResult
+	agentService.OnAck = agentCommands.OnAck
+	agentService.OnLog = agentCommands.OnLog
+	agentService.OnResult = agentCommands.OnResult
+	agentService.OnInterrupted = agentCommands.OnInterrupted
 	agentService.OnSysInfo = agentEvents.OnSysInfo
 	agentService.OnMetrics = agentEvents.OnMetrics
-	agentService.OnInterrupted = agentEvents.OnInterrupted
 	agentService.OnOnline = agentEvents.OnOnline
 	agentService.OnOffline = agentEvents.OnOffline
 	agentHandler := agentmanager.NewHandler(agentHub, agentAuth, agentService)
@@ -180,6 +184,10 @@ func Run(configPath string) error {
 	// 处理上次运行时中断和未执行的 Agent 安装任务
 	if err := agentInstaller.Recover(context.Background()); err != nil {
 		return fmt.Errorf("Agent 安装任务恢复失败: %w", err)
+	}
+	// 处理上次运行时未下发的 Agent 命令任务（执行中的已在上一步标记失败）
+	if err := agentCommands.Recover(context.Background()); err != nil {
+		return fmt.Errorf("Agent 命令任务恢复失败: %w", err)
 	}
 
 	return RunHTTPServer(cfg.Server, engine)

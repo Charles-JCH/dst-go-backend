@@ -20,11 +20,13 @@ type Repository interface {
 
 	// 以下为系统内部使用，不带 user_id 条件
 	FindByID(ctx context.Context, taskID uint64) (*entity.Task, error)
+	FindByCommandID(ctx context.Context, commandID string) (*entity.Task, error)
 	ListPending(ctx context.Context, taskType string) ([]entity.Task, error)
 	Start(ctx context.Context, taskID uint64) error
 	UpdateStage(ctx context.Context, taskID uint64, stage string) error
 	Finish(ctx context.Context, taskID uint64, status string, errorMessage string) error
 	FailRunning(ctx context.Context, errorMessage string) (int64, error)
+	FailPendingCommands(ctx context.Context, errorMessage string) (int64, error)
 
 	CreateLog(ctx context.Context, log *entity.TaskLog) error
 	ListLogs(ctx context.Context, taskID uint64, afterID uint64, limit int) ([]entity.TaskLog, error)
@@ -106,6 +108,10 @@ func (r *repository) FindByID(ctx context.Context, taskID uint64) (*entity.Task,
 	return repo.First[entity.Task](r.getDB(ctx), "id = ?", taskID)
 }
 
+func (r *repository) FindByCommandID(ctx context.Context, commandID string) (*entity.Task, error) {
+	return repo.First[entity.Task](r.getDB(ctx), "command_id = ?", commandID)
+}
+
 func (r *repository) ListPending(ctx context.Context, taskType string) ([]entity.Task, error) {
 	var tasks []entity.Task
 	err := r.getDB(ctx).
@@ -117,7 +123,7 @@ func (r *repository) ListPending(ctx context.Context, taskType string) ([]entity
 
 // Start pending → running；任务不是 pending 时返回 ErrStatusConflict
 func (r *repository) Start(ctx context.Context, taskID uint64) error {
-	return r.transit(ctx, taskID, entity.TaskStatusPending, map[string]any{
+	return r.transit(ctx, taskID, []string{entity.TaskStatusPending}, map[string]any{
 		"status":     entity.TaskStatusRunning,
 		"started_at": time.Now(),
 	})
@@ -125,12 +131,13 @@ func (r *repository) Start(ctx context.Context, taskID uint64) error {
 
 // UpdateStage 更新执行步骤，只对执行中的任务生效
 func (r *repository) UpdateStage(ctx context.Context, taskID uint64, stage string) error {
-	return r.transit(ctx, taskID, entity.TaskStatusRunning, map[string]any{"stage": stage})
+	return r.transit(ctx, taskID, []string{entity.TaskStatusRunning}, map[string]any{"stage": stage})
 }
 
-// Finish running → succeeded / failed，并释放 ActiveKey；任务不是 running 时返回 ErrStatusConflict
+// Finish pending / running → succeeded / failed，并释放 ActiveKey；任务已结束时返回 ErrStatusConflict。
+// 允许从 pending 直接结束：命令下发失败、Agent 拒绝执行时任务还没开始
 func (r *repository) Finish(ctx context.Context, taskID uint64, status string, errorMessage string) error {
-	return r.transit(ctx, taskID, entity.TaskStatusRunning, map[string]any{
+	return r.transit(ctx, taskID, []string{entity.TaskStatusPending, entity.TaskStatusRunning}, map[string]any{
 		"status":        status,
 		"error_message": errorMessage,
 		"active_key":    nil,
@@ -143,6 +150,20 @@ func (r *repository) FailRunning(ctx context.Context, errorMessage string) (int6
 	result := r.getDB(ctx).
 		Model(&entity.Task{}).
 		Where("status = ?", entity.TaskStatusRunning).
+		Updates(map[string]any{
+			"status":        entity.TaskStatusFailed,
+			"error_message": errorMessage,
+			"active_key":    nil,
+			"finished_at":   time.Now(),
+		})
+	return result.RowsAffected, repo.WrapError(result.Error)
+}
+
+// FailPendingCommands 把待执行的 Agent 命令任务标记为失败：平台重启后已不知道命令是否发出
+func (r *repository) FailPendingCommands(ctx context.Context, errorMessage string) (int64, error) {
+	result := r.getDB(ctx).
+		Model(&entity.Task{}).
+		Where("status = ? AND command_id <> ''", entity.TaskStatusPending).
 		Updates(map[string]any{
 			"status":        entity.TaskStatusFailed,
 			"error_message": errorMessage,
@@ -171,11 +192,11 @@ func (r *repository) getDB(ctx context.Context) *gorm.DB {
 	return repo.GetDBFromCtx(ctx, r.db)
 }
 
-// transit 只在任务处于 from 状态时更新，保证重复执行不会把状态改乱
-func (r *repository) transit(ctx context.Context, taskID uint64, from string, updates map[string]any) error {
+// transit 只在任务处于 from 中的状态时更新，保证重复执行不会把状态改乱
+func (r *repository) transit(ctx context.Context, taskID uint64, from []string, updates map[string]any) error {
 	result := r.getDB(ctx).
 		Model(&entity.Task{}).
-		Where("id = ? AND status = ?", taskID, from).
+		Where("id = ? AND status IN ?", taskID, from).
 		Updates(updates)
 	if result.Error != nil {
 		return repo.WrapError(result.Error)

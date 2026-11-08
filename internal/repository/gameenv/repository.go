@@ -9,6 +9,7 @@ import (
 
 type Repository interface {
 	List(ctx context.Context) ([]entity.GameEnv, error)
+	FindByCode(ctx context.Context, code string) (*entity.GameEnv, error)
 }
 
 type repository struct {
@@ -23,4 +24,8 @@ func (r *repository) List(ctx context.Context) ([]entity.GameEnv, error) {
 	var envs []entity.GameEnv
 	err := repo.GetDBFromCtx(ctx, r.db).Order("id ASC").Find(&envs).Error
 	return envs, err
+}
+
+func (r *repository) FindByCode(ctx context.Context, code string) (*entity.GameEnv, error) {
+	return repo.First[entity.GameEnv](repo.GetDBFromCtx(ctx, r.db), "code = ?", code)
 }

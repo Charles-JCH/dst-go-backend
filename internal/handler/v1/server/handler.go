@@ -4,16 +4,18 @@ import (
 	"game-panel/internal/handler"
 	"game-panel/internal/model/request"
 	"game-panel/internal/result"
+	"game-panel/internal/service/gamedeploy"
 	"game-panel/internal/service/server"
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
 	serverService server.Service
+	deployService gamedeploy.Service
 }
 
-func NewHandler(serverService server.Service) *Handler {
-	return &Handler{serverService: serverService}
+func NewHandler(serverService server.Service, deployService gamedeploy.Service) *Handler {
+	return &Handler{serverService: serverService, deployService: deployService}
 }
 
 // Create 创建服务器
@@ -127,6 +129,27 @@ func (h *Handler) ListMetrics(c *gin.Context) {
 	}
 
 	resp, err := h.serverService.ListMetrics(c.Request.Context(), c.GetUint64("userID"), serverID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
+// DeployGame 部署游戏环境，返回部署任务
+// [POST] /api/v1/server/:id/deploy
+func (h *Handler) DeployGame(c *gin.Context) {
+	serverID, ok := handler.PathID(c, "服务器ID")
+	if !ok {
+		return
+	}
+	var req request.DeployGameReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		result.FailWithMsg(c, 400, "请求参数无效")
+		return
+	}
+
+	resp, err := h.deployService.Deploy(c.Request.Context(), c.GetUint64("userID"), serverID, &req)
 	if err != nil {
 		result.Fail(c, err)
 		return

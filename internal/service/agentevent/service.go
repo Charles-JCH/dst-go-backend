@@ -26,14 +26,11 @@ const (
 // archPattern Go 的架构名，如 amd64、arm64
 var archPattern = regexp.MustCompile(`^[a-z0-9]{1,16}$`)
 
-// Service 处理 Agent 回传的事件：更新任务状态、保存日志、转发给浏览器
+// Service 处理 Agent 主动上报的事件：上下线、系统配置、资源使用情况，保存后推送给浏览器。
+// 命令相关的确认、日志和结果由 agentcommand 处理
 type Service interface {
-	OnAck(serverID uint64, id string, ack protocol.Ack)
-	OnLog(serverID uint64, id string, line protocol.Log)
-	OnResult(serverID uint64, id string, result protocol.Result)
 	OnSysInfo(serverID uint64, info protocol.SysInfo)
 	OnMetrics(serverID uint64, metrics protocol.Metrics)
-	OnInterrupted(serverID uint64, id string, reason string)
 	OnOnline(serverID uint64)
 	OnOffline(serverID uint64)
 }
@@ -53,33 +50,6 @@ type service struct {
 
 func NewService(serverRepo serverrepo.Repository, metricsCache cache.MetricsCache, notifier Notifier) Service {
 	return &service{serverRepo: serverRepo, metricsCache: metricsCache, notifier: notifier}
-}
-
-func (s *service) OnAck(serverID uint64, id string, ack protocol.Ack) {
-	slog.Info("agent 命令确认",
-		"serverID", serverID,
-		"commandID", id,
-		"accepted", ack.IsAccepted,
-		"reason", ack.Reason,
-	)
-}
-
-func (s *service) OnLog(serverID uint64, id string, line protocol.Log) {
-	slog.Info("agent 执行日志",
-		"serverID", serverID,
-		"commandID", id,
-		"content", line.Content,
-	)
-}
-
-func (s *service) OnResult(serverID uint64, id string, result protocol.Result) {
-	slog.Info("agent 执行结果",
-		"serverID", serverID,
-		"commandID", id,
-		"success", result.IsSuccess,
-		"exitCode", result.ExitCode,
-		"error", result.Error,
-	)
 }
 
 // OnSysInfo 保存 Agent 上报的系统配置并推送给服务器所属用户；Agent 不可信，入库前校验
@@ -129,14 +99,6 @@ func (s *service) OnMetrics(serverID uint64, metrics protocol.Metrics) {
 		ServerID:    serverID,
 		MetricsResp: *response.ToMetricsResp(&m),
 	})
-}
-
-func (s *service) OnInterrupted(serverID uint64, id string, reason string) {
-	slog.Warn("agent 命令结果未知",
-		"serverID", serverID,
-		"commandID", id,
-		"reason", reason,
-	)
 }
 
 func (s *service) OnOnline(serverID uint64) {

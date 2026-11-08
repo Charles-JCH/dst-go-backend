@@ -25,15 +25,21 @@ func NewExecutor(cfg ExecutorConfig) *Executor {
 	return &Executor{cfg: cfg}
 }
 
+// Acquire 占用执行器，已有命令在执行时返回 false；脚本一次只跑一条命令
+func (e *Executor) Acquire() bool {
+	return e.mu.TryLock()
+}
+
+// Release 释放执行器，与 Acquire 成对调用
+func (e *Executor) Release() {
+	e.mu.Unlock()
+}
+
+// Execute 执行一条命令，调用方需先 Acquire
 func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onLog LogFunc) *protocol.Result {
 	failed := func(msg string) *protocol.Result {
 		return &protocol.Result{Action: payload.Action, Slot: payload.Slot, ExitCode: -1, Error: msg}
 	}
-
-	if !e.mu.TryLock() {
-		return failed("已有任务执行中")
-	}
-	defer e.mu.Unlock()
 
 	args, err := e.buildArgs(payload)
 	if err != nil {

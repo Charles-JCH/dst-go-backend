@@ -18,3 +18,7 @@ type ListServerReq struct {
 	Page     int `form:"page,default=1" binding:"min=1,max=1000000"`
 	PageSize int `form:"pageSize,default=20" binding:"min=1,max=100"`
 }
+
+type DeployGameReq struct {
+	GameCode string `json:"gameCode" binding:"required,max=32"`
+}

@@ -7,7 +7,11 @@ import (
 
 const (
 	TaskTypeAgentInstall = "agent_install"
-	TaskResourceServer   = "server"
+	TaskTypeGameDeploy   = "game_deploy" // 通过 Agent 部署游戏环境
+	TaskTypeDstDelete    = "dst_delete"  // 通过 Agent 清理存档文件
+
+	TaskResourceServer = "server"
+	TaskResourceDst    = "dst"
 
 	TaskStatusPending   = "pending"
 	TaskStatusRunning   = "running"
@@ -20,22 +24,30 @@ const (
 	TaskStageUploading     = "uploading"
 	TaskStageInstalling    = "installing"
 	TaskStageWaitingOnline = "waiting_online"
+
+	// Agent 命令任务的执行步骤
+	TaskStageExecuting = "executing"
+
+	// taskKeyAgentCommand 同一台服务器同时只能有一个 Agent 命令任务（Agent 一次只执行一条命令）
+	taskKeyAgentCommand = "agent_command"
 )
 
 type Task struct {
 	BaseModel
-	Name         string     `gorm:"type:varchar(128);not null;comment:任务名称" json:"name"`
-	Type         string     `gorm:"type:varchar(64);not null;comment:任务类型" json:"type"`
-	Status       string     `gorm:"type:varchar(16);not null;default:pending;comment:任务状态(pending:待执行 running:执行中 succeeded:成功 failed:失败)" json:"status"`
-	Stage        string     `gorm:"type:varchar(64);comment:当前执行步骤" json:"stage"`
-	ResourceType string     `gorm:"type:varchar(64);index:idx_task_user_resource,priority:2;comment:关联资源类型" json:"resourceType"`
-	ResourceID   uint64     `gorm:"type:bigint;not null;default:0;index:idx_task_user_resource,priority:3;comment:关联资源ID" json:"resourceID"`
-	UserID       uint64     `gorm:"type:bigint;not null;index:idx_task_user_resource,priority:1;comment:所属用户ID" json:"userID"`
-	CommandID    string     `gorm:"type:varchar(36);index;comment:下发给 Agent 的命令ID，SSH 执行的任务为空" json:"-"`
-	ActiveKey    *string    `gorm:"type:varchar(128);uniqueIndex;comment:进行中任务的唯一键，结束后置空，保证同一资源同类任务只有一个在执行" json:"-"`
-	ErrorMessage string     `gorm:"type:text;comment:任务失败原因" json:"errorMessage"`
-	StartedAt    *time.Time `gorm:"comment:开始执行时间" json:"startedAt"`
-	FinishedAt   *time.Time `gorm:"comment:执行结束时间" json:"finishedAt"`
+	Name         string  `gorm:"type:varchar(128);not null;comment:任务名称" json:"name"`
+	Type         string  `gorm:"type:varchar(64);not null;comment:任务类型" json:"type"`
+	Status       string  `gorm:"type:varchar(16);not null;default:pending;comment:任务状态(pending:待执行 running:执行中 succeeded:成功 failed:失败)" json:"status"`
+	Stage        string  `gorm:"type:varchar(64);comment:当前执行步骤" json:"stage"`
+	ResourceType string  `gorm:"type:varchar(64);index:idx_task_user_resource,priority:2;comment:关联资源类型" json:"resourceType"`
+	ResourceID   uint64  `gorm:"type:bigint;not null;default:0;index:idx_task_user_resource,priority:3;comment:关联资源ID" json:"resourceID"`
+	UserID       uint64  `gorm:"type:bigint;not null;index:idx_task_user_resource,priority:1;comment:所属用户ID" json:"userID"`
+	CommandID    string  `gorm:"type:varchar(36);index;comment:下发给 Agent 的命令ID，SSH 执行的任务为空" json:"-"`
+	ActiveKey    *string `gorm:"type:varchar(128);uniqueIndex;comment:进行中任务的唯一键，结束后置空，保证同一资源同类任务只有一个在执行" json:"-"`
+	// Params 任务参数，执行成功后的处理和重试使用，如部署的游戏编码
+	Params       map[string]string `gorm:"type:json;serializer:json;comment:任务参数" json:"-"`
+	ErrorMessage string            `gorm:"type:text;comment:任务失败原因" json:"errorMessage"`
+	StartedAt    *time.Time        `gorm:"comment:开始执行时间" json:"startedAt"`
+	FinishedAt   *time.Time        `gorm:"comment:执行结束时间" json:"finishedAt"`
 }
 
 func (Task) TableName() string {
@@ -46,4 +58,9 @@ func (Task) TableName() string {
 func TaskActiveKey(taskType, resourceType string, resourceID uint64) *string {
 	key := fmt.Sprintf("%s:%s:%d", taskType, resourceType, resourceID)
 	return &key
+}
+
+// AgentCommandActiveKey Agent 命令任务的唯一键：按服务器区分，与任务类型和关联资源无关
+func AgentCommandActiveKey(serverID uint64) *string {
+	return TaskActiveKey(taskKeyAgentCommand, TaskResourceServer, serverID)
 }

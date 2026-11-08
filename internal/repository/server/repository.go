@@ -23,6 +23,7 @@ type Repository interface {
 	SetSSHHostKey(ctx context.Context, serverID uint64, hostKey string) error
 	IncrAgentTokenVersion(ctx context.Context, serverID uint64) (uint64, error)
 	UpdateSysInfo(ctx context.Context, serverID uint64, fields SysInfoFields) error
+	AddGameEnv(ctx context.Context, serverID uint64, env entity.GameEnvRef) error
 }
 
 type UpdateFields struct {
@@ -195,6 +196,29 @@ func (r *repository) UpdateSysInfo(ctx context.Context, serverID uint64, fields 
 		return repo.ErrNotFound
 	}
 	return nil
+}
+
+// AddGameEnv 把游戏加入服务器已部署的游戏环境，已存在时不重复添加；
+// 同一台服务器的部署任务不会并发执行，读改写不需要加锁
+func (r *repository) AddGameEnv(ctx context.Context, serverID uint64, env entity.GameEnvRef) error {
+	server, err := r.FindByID(ctx, serverID)
+	if err != nil {
+		return err
+	}
+	if server == nil {
+		return repo.ErrNotFound
+	}
+	for _, e := range server.GameEnv {
+		if e.Code == env.Code {
+			return nil
+		}
+	}
+	// 用结构体更新才会经过字段的 JSON 序列化；UpdateColumns 不改 updated_at
+	return repo.WrapError(r.getDB(ctx).
+		Model(&entity.Server{}).
+		Where("id = ?", serverID).
+		Select("game_env").
+		UpdateColumns(&entity.Server{GameEnv: append(server.GameEnv, env)}).Error)
 }
 
 func (r *repository) getDB(ctx context.Context) *gorm.DB {

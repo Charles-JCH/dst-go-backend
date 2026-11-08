@@ -8,6 +8,7 @@ server:
   port: 8080
   mode: "debug"  # Gin 模式: debug | release | test
   allowed_origins:
+    - "http://localhost:5173"
     - "http://43.155.211.217"
   cookie_secure: false
 

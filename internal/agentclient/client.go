@@ -159,13 +159,23 @@ func (c *Client) send(conn *websocket.Conn, id string, msgType string, payload a
 }
 
 func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id string, payload protocol.CmdPayload) {
+	// 先占用执行器再确认：已有命令在执行时直接拒绝，平台不会把任务标成执行中
+	if !c.executor.Acquire() {
+		if err := c.sendAck(conn, id, protocol.Ack{IsAccepted: false, Reason: "已有命令在执行"}); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "命令确认发送失败 commandID=%s error=%v\n", id, err)
+			_ = conn.Close()
+		}
+		return
+	}
+	defer c.executor.Release()
+
 	if err := c.sendAck(conn, id, protocol.Ack{IsAccepted: true}); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "命令确认发送失败 commandID=%s error=%v\n", id, err)
 		_ = conn.Close()
 	}
 
 	var reportOnce sync.Once
-	result := c.executor.Execute(ctx, payload, func(line string) {
+	logs := newLogFilter(func(line string) {
 		if err := c.sendLog(conn, id, line); err != nil {
 			reportOnce.Do(func() {
 				_, _ = fmt.Fprintf(os.Stderr, "执行日志发送失败 commandID=%s error=%v\n", id, err)
@@ -173,6 +183,8 @@ func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id str
 			})
 		}
 	})
+	result := c.executor.Execute(ctx, payload, logs.Write)
+	logs.Flush()
 
 	if err := c.sendResult(conn, id, result); err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "执行结果发送失败 commandID=%s success=%t exitCode=%d error=%v\n", id, result.IsSuccess, result.ExitCode, err)

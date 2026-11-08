@@ -5,8 +5,8 @@ import (
 	"sync"
 )
 
-// sendBuffer 每个连接待发送事件的缓冲数，写满说明浏览器处理不过来，直接断开让它重连
-const sendBuffer = 64
+// sendBuffer 每个连接待发送事件的缓冲数（部署时日志可能短时间内大量到达），写满说明浏览器处理不过来，直接断开让它重连
+const sendBuffer = 256
 
 // Event 推送给浏览器的消息
 type Event struct {
