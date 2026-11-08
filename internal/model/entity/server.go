@@ -8,9 +8,10 @@ type Server struct {
 	Username          string       `gorm:"type:varchar(64);not null;comment:SSH用户名" json:"username"`
 	Password          string       `gorm:"type:text;not null;comment:SSH密码密文" json:"-"`
 	CPU               int          `gorm:"type:int;not null;default:0;comment:CPU核心数" json:"cpu"`
-	RAM               int64        `gorm:"type:bigint;not null;default:0;comment:内存容量(字节)" json:"ram"`
-	Disk              int64        `gorm:"type:bigint;not null;default:0;comment:硬盘容量(字节)" json:"disk"`
+	RAM               int64        `gorm:"type:bigint;not null;default:0;comment:内存容量(字节)，由 Agent 上报" json:"ram"`
+	Disk              int64        `gorm:"type:bigint;not null;default:0;comment:游戏所在分区容量(字节)，由 Agent 上报" json:"disk"`
 	OSName            string       `gorm:"type:varchar(128);comment:操作系统" json:"osName"`
+	Arch              string       `gorm:"type:varchar(16);comment:系统架构(amd64/arm64)" json:"arch"`
 	GameEnv           []GameEnvRef `gorm:"type:json;serializer:json;comment:已部署的游戏环境" json:"gameEnv"`
 	Mods              []string     `gorm:"type:json;serializer:json;comment:模组" json:"mods"`
 	UserID            uint64       `gorm:"type:bigint;not null;uniqueIndex:uk_server_user_ip_port,priority:1;comment:所属用户ID" json:"userID"`

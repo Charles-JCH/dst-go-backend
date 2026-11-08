@@ -17,16 +17,18 @@ type Client struct {
 	cfg      ServerConfig
 	identity IdentityConfig
 	service  ServiceConfig
+	sysInfo  SysInfoConfig
 	executor *Executor
 	token    string
 	writeMu  sync.Mutex
 }
 
-func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, serviceCfg ServiceConfig, exec *Executor) *Client {
+func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, serviceCfg ServiceConfig, sysInfoCfg SysInfoConfig, exec *Executor) *Client {
 	return &Client{
 		cfg:      serverCfg,
 		identity: identityCfg,
 		service:  serviceCfg,
+		sysInfo:  sysInfoCfg,
 		executor: exec,
 	}
 }
@@ -78,6 +80,11 @@ func (c *Client) connectAndServe(ctx context.Context) error {
 		return fmt.Errorf("websocket 连接失败: %w", err)
 	}
 	defer conn.Close()
+
+	// 每次连上都上报系统配置，服务器重启、扩容后平台能拿到最新值
+	if err := c.send(conn, "", protocol.TypeSysInfo, CollectSysInfo(c.sysInfo.DiskPath)); err != nil {
+		return fmt.Errorf("系统配置上报失败: %w", err)
+	}
 
 	childCtx, cancel := context.WithCancel(ctx)
 	defer cancel()

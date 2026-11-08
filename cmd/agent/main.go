@@ -30,7 +30,7 @@ func main() {
 
 	// 初始化 agent
 	exec := agentclient.NewExecutor(cfg.Executor)
-	agentClient := agentclient.NewClient(cfg.Server, cfg.Identity, cfg.Service, exec)
+	agentClient := agentclient.NewClient(cfg.Server, cfg.Identity, cfg.Service, cfg.SysInfo, exec)
 
 	// 启动 agent
 	if err := agentClient.Start(ctx, token); err != nil {

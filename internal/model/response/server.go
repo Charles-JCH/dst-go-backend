@@ -15,6 +15,7 @@ type ServerResp struct {
 	RAM           int64         `json:"ram"`
 	Disk          int64         `json:"disk"`
 	OSName        string        `json:"osName"`
+	Arch          string        `json:"arch"`
 	GameEnv       []GameEnvResp `json:"gameEnv"`
 	Mods          []string      `json:"mods"`
 	IsAgentOnline bool          `json:"agentOnline"`
@@ -50,6 +51,7 @@ func ToServerResp(server *entity.Server, isAgentOnline bool) *ServerResp {
 		RAM:           server.RAM,
 		Disk:          server.Disk,
 		OSName:        server.OSName,
+		Arch:          server.Arch,
 		GameEnv:       gameEnv,
 		Mods:          mods,
 		IsAgentOnline: isAgentOnline,

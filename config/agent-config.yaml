@@ -10,3 +10,6 @@ executor:
 
 identity:
   path: "/var/lib/game-agent/identity.json"
+
+sysinfo:
+  disk_path: "/home/charles"  # 游戏文件所在目录，上报它所在分区的容量

@@ -22,6 +22,7 @@ type Repository interface {
 	AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error)
 	SetSSHHostKey(ctx context.Context, serverID uint64, hostKey string) error
 	IncrAgentTokenVersion(ctx context.Context, serverID uint64) (uint64, error)
+	UpdateSysInfo(ctx context.Context, serverID uint64, fields SysInfoFields) error
 }
 
 type UpdateFields struct {
@@ -31,6 +32,15 @@ type UpdateFields struct {
 	Username   string
 	Password   *string
 	SSHHostKey *string
+}
+
+// SysInfoFields Agent 上报的系统配置，每次全部覆盖
+type SysInfoFields struct {
+	CPU    int
+	RAM    int64
+	Disk   int64
+	OSName string
+	Arch   string
 }
 
 type repository struct {
@@ -164,6 +174,35 @@ func (r *repository) IncrAgentTokenVersion(ctx context.Context, serverID uint64)
 		return 0, repo.ErrNotFound
 	}
 	return version, nil
+}
+
+// UpdateSysInfo 写入系统配置；用 UpdateColumns 不改 updated_at，它只记录用户的修改
+func (r *repository) UpdateSysInfo(ctx context.Context, serverID uint64, fields SysInfoFields) error {
+	result := r.getDB(ctx).
+		Model(&entity.Server{}).
+		Where("id = ?", serverID).
+		UpdateColumns(map[string]any{
+			"cpu":     fields.CPU,
+			"ram":     fields.RAM,
+			"disk":    fields.Disk,
+			"os_name": fields.OSName,
+			"arch":    fields.Arch,
+		})
+	if result.Error != nil {
+		return repo.WrapError(result.Error)
+	}
+	if result.RowsAffected > 0 {
+		return nil
+	}
+	// 部分数据库在值未变化时不计入影响行数，再查一次区分是否存在
+	server, err := r.FindByID(ctx, serverID)
+	if err != nil {
+		return err
+	}
+	if server == nil {
+		return repo.ErrNotFound
+	}
+	return nil
 }
 
 func (r *repository) getDB(ctx context.Context) *gorm.DB {

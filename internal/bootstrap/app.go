@@ -150,6 +150,7 @@ func Run(configPath string) error {
 	agentService.OnAck = agentEvents.OnAck
 	agentService.OnLog = agentEvents.OnLog
 	agentService.OnResult = agentEvents.OnResult
+	agentService.OnSysInfo = agentEvents.OnSysInfo
 	agentService.OnInterrupted = agentEvents.OnInterrupted
 	agentService.OnOnline = agentEvents.OnOnline
 	agentService.OnOffline = agentEvents.OnOffline

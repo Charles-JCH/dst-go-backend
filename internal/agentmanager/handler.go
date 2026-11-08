@@ -126,6 +126,13 @@ func (h *Handler) readLoop(ctx context.Context, serverID uint64, conn *websocket
 				return
 			}
 			h.service.HandleResult(serverID, env.ID, res)
+		case protocol.TypeSysInfo:
+			var info protocol.SysInfo
+			if err := json.Unmarshal(env.Payload, &info); err != nil {
+				slog.WarnContext(ctx, "系统配置解析失败", "serverID", serverID, "error", err)
+				continue
+			}
+			h.service.HandleSysInfo(serverID, info)
 		}
 	}
 }

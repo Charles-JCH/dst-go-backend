@@ -12,6 +12,7 @@ type Service struct {
 	OnAck         func(serverID uint64, id string, ack protocol.Ack)
 	OnLog         func(serverID uint64, id string, line protocol.Log)
 	OnResult      func(serverID uint64, id string, result protocol.Result)
+	OnSysInfo     func(serverID uint64, info protocol.SysInfo)
 	OnInterrupted func(serverID uint64, id string, reason string)
 	OnOnline      func(serverID uint64)
 	OnOffline     func(serverID uint64)
@@ -113,6 +114,12 @@ func (s *Service) HandleResult(serverID uint64, id string, result protocol.Resul
 	}
 	if s.OnResult != nil {
 		s.OnResult(serverID, id, result)
+	}
+}
+
+func (s *Service) HandleSysInfo(serverID uint64, info protocol.SysInfo) {
+	if s.OnSysInfo != nil {
+		s.OnSysInfo(serverID, info)
 	}
 }
 

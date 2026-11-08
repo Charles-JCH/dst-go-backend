@@ -30,6 +30,8 @@ const (
 	remoteUnit   = remoteDir + "/dst-agent.service"
 	systemdUnit  = "/etc/systemd/system/dst-agent.service"
 	serviceName  = "dst-agent"
+	// dst.sh 以 charles 用户运行游戏，游戏文件都在它的主目录下
+	gameDir = "/home/charles"
 
 	maxConcurrent = 5                // 同时执行的安装任务数
 	taskTimeout   = 10 * time.Minute // 单个安装任务的最长时间
@@ -389,7 +391,10 @@ service:
   name: %q
   unit_path: %q
   install_dir: %q
-`, s.cfg.WSURL, remoteScript, remoteToken, serviceName, systemdUnit, remoteDir))
+
+sysinfo:
+  disk_path: %q
+`, s.cfg.WSURL, remoteScript, remoteToken, serviceName, systemdUnit, remoteDir, gameDir))
 }
 
 // unitFile 生成 systemd 服务配置；username 已校验为合法的 Linux 用户名
