@@ -12,6 +12,7 @@ import (
 const (
 	tokenBlacklistPrefix = "token_blacklist:"
 	resetTokenPrefix     = "reset_token:"
+	wsTicketPrefix       = "ws_ticket:"
 )
 
 type AuthCache interface {
@@ -24,6 +25,10 @@ type AuthCache interface {
 	SetResetToken(ctx context.Context, token string, userID uint64, tokenVersion uint64, ttl time.Duration) error
 	GetResetToken(ctx context.Context, token string) (*ResetTokenData, error)
 	DelResetToken(ctx context.Context, token string) error
+
+	// 浏览器 WebSocket 一次性 ticket
+	SetWSTicket(ctx context.Context, ticket string, userID uint64, ttl time.Duration) error
+	ConsumeWSTicket(ctx context.Context, ticket string) (uint64, error)
 }
 
 type ResetTokenData struct {
@@ -46,8 +51,8 @@ func (c *authCache) AddTokenToBlacklist(ctx context.Context, jti string, ttl tim
 
 func (c *authCache) IsTokenInBlacklist(ctx context.Context, jti string) (bool, error) {
 	key := tokenBlacklistPrefix + jti
-	exists, err := c.client.Exists(ctx, key).Result()
-	return exists > 0, err
+	count, err := c.client.Exists(ctx, key).Result()
+	return count > 0, err
 }
 
 func (c *authCache) ConsumeRefreshToken(ctx context.Context, jti string, ttl time.Duration) (bool, error) {
@@ -60,12 +65,12 @@ func (c *authCache) ConsumeRefreshToken(ctx context.Context, jti string, ttl tim
 
 	key := tokenBlacklistPrefix + jti
 
-	consumed, err := c.client.SetNX(ctx, key, "1", ttl).Result()
+	isConsumed, err := c.client.SetNX(ctx, key, "1", ttl).Result()
 	if err != nil {
 		return false, fmt.Errorf("刷新凭证消费失败: %w", err)
 	}
 
-	return consumed, nil
+	return isConsumed, nil
 }
 
 func (c *authCache) SetResetToken(ctx context.Context, token string, userID uint64, tokenVersion uint64, ttl time.Duration) error {
@@ -103,4 +108,16 @@ func (c *authCache) GetResetToken(ctx context.Context, token string) (*ResetToke
 func (c *authCache) DelResetToken(ctx context.Context, token string) error {
 	key := resetTokenPrefix + token
 	return c.client.Del(ctx, key).Err()
+}
+
+func (c *authCache) SetWSTicket(ctx context.Context, ticket string, userID uint64, ttl time.Duration) error {
+	return c.client.Set(ctx, wsTicketPrefix+ticket, userID, ttl).Err()
+}
+
+func (c *authCache) ConsumeWSTicket(ctx context.Context, ticket string) (uint64, error) {
+	userID, err := c.client.GetDel(ctx, wsTicketPrefix+ticket).Uint64()
+	if errors.Is(err, redis.Nil) {
+		return 0, nil
+	}
+	return userID, err
 }

@@ -13,6 +13,8 @@ type Service struct {
 	OnLog         func(serverID uint64, id string, line protocol.Log)
 	OnResult      func(serverID uint64, id string, result protocol.Result)
 	OnInterrupted func(serverID uint64, id string, reason string)
+	OnOnline      func(serverID uint64)
+	OnOffline     func(serverID uint64)
 }
 
 func NewService(hub *Hub) *Service {
@@ -25,6 +27,16 @@ func NewService(hub *Hub) *Service {
 				id,
 				"agent 连接中断，结果未知",
 			)
+		}
+	}
+	hub.OnOnline = func(serverID uint64) {
+		if s.OnOnline != nil {
+			s.OnOnline(serverID)
+		}
+	}
+	hub.OnOffline = func(serverID uint64) {
+		if s.OnOffline != nil {
+			s.OnOffline(serverID)
 		}
 	}
 	return s
@@ -68,24 +80,18 @@ func (s *Service) OnlineCount() int {
 	return s.hub.Count()
 }
 
-func (s *Service) send(serverID uint64, payload protocol.CmdPayload) (string, error) {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("命令序列化失败: %w", err)
-	}
-	env := protocol.Envelope{
-		ID:      uuid.NewString(),
-		Type:    protocol.TypeCommand,
-		Payload: data,
-	}
-	if err := s.hub.Send(serverID, env); err != nil {
-		return "", err
-	}
-	return env.ID, nil
+// Disconnect 断开服务器的 Agent 连接，用于删除服务器或重装 Agent
+func (s *Service) Disconnect(serverID uint64) {
+	s.hub.Disconnect(serverID)
+}
+
+// Uninstall 通知 Agent 停止服务并删除安装文件，Agent 不回传结果
+func (s *Service) Uninstall(serverID uint64) error {
+	return s.hub.Send(serverID, protocol.Envelope{Type: protocol.TypeUninstall})
 }
 
 func (s *Service) HandleAck(serverID uint64, id string, ack protocol.Ack) {
-	if !ack.Accepted {
+	if !ack.IsAccepted {
 		if !s.hub.Finish(serverID, id) {
 			return
 		}
@@ -108,4 +114,20 @@ func (s *Service) HandleResult(serverID uint64, id string, result protocol.Resul
 	if s.OnResult != nil {
 		s.OnResult(serverID, id, result)
 	}
+}
+
+func (s *Service) send(serverID uint64, payload protocol.CmdPayload) (string, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("命令序列化失败: %w", err)
+	}
+	env := protocol.Envelope{
+		ID:      uuid.NewString(),
+		Type:    protocol.TypeCommand,
+		Payload: data,
+	}
+	if err := s.hub.Send(serverID, env); err != nil {
+		return "", err
+	}
+	return env.ID, nil
 }

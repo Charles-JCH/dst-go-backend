@@ -101,3 +101,19 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 	result.Success(c, nil)
 }
+
+// InstallAgent 重新安装 Agent
+// [POST] /api/v1/server/:id/agent/install
+func (h *Handler) InstallAgent(c *gin.Context) {
+	serverID, ok := handler.PathID(c, "服务器ID")
+	if !ok {
+		return
+	}
+
+	resp, err := h.serverService.InstallAgent(c.Request.Context(), c.GetUint64("userID"), serverID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}

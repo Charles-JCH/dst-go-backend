@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"game-panel/internal/protocol"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -46,6 +47,8 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 	pr, pw := io.Pipe()
 	cmd := exec.CommandContext(ctx, e.cfg.ScriptPath, args...)
 	cmd.Stdout, cmd.Stderr = pw, pw
+	// 脚本版本由平台统一推送，关闭脚本自更新
+	cmd.Env = append(os.Environ(), "DST_NO_AUTO_UPDATE=1")
 	killWithChildren(cmd) // 超时时连同子进程一起结束
 	cmd.WaitDelay = 5 * time.Second
 
@@ -69,12 +72,12 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 	}
 
 	if payload.Action == protocol.ActionStatus {
-		result.Success = result.ExitCode == 0 || result.ExitCode == 2
+		result.IsSuccess = result.ExitCode == 0 || result.ExitCode == 2
 	} else {
-		result.Success = result.ExitCode == 0
+		result.IsSuccess = result.ExitCode == 0
 	}
 
-	if !result.Success {
+	if !result.IsSuccess {
 		if ctx.Err() != nil {
 			result.Error = fmt.Sprintf("脚本执行失败: %v", ctx.Err())
 		} else {
@@ -83,20 +86,6 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 	}
 
 	return result
-}
-
-func (e *Executor) readOutput(r io.Reader, onLog LogFunc) {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
-	for scanner.Scan() {
-		if onLog != nil {
-			onLog(scanner.Text())
-		}
-	}
-
-	if err := scanner.Err(); err != nil && onLog != nil {
-		onLog(fmt.Sprintf("日志读取失败: %v", err))
-	}
 }
 
 func (e *Executor) buildArgs(payload protocol.CmdPayload) ([]string, error) {
@@ -111,5 +100,19 @@ func (e *Executor) buildArgs(payload protocol.CmdPayload) ([]string, error) {
 		return args, nil
 	default:
 		return nil, fmt.Errorf("不支持操作 action=%s", payload.Action)
+	}
+}
+
+func (e *Executor) readOutput(r io.Reader, onLog LogFunc) {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		if onLog != nil {
+			onLog(scanner.Text())
+		}
+	}
+
+	if err := scanner.Err(); err != nil && onLog != nil {
+		onLog(fmt.Sprintf("日志读取失败: %v", err))
 	}
 }

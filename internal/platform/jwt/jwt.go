@@ -48,20 +48,20 @@ func NewTokenManager(cfg Config) TokenManager {
 }
 
 // GenerateAccessToken 生成 AccessToken
-func (j *tokenManager) GenerateAccessToken(userID uint64, username string, role string, tokenVersion uint64) (string, error) {
-	return j.generateToken(userID, username, role, tokenVersion, j.cfg.AccessSecret, j.cfg.AccessExpire)
+func (m *tokenManager) GenerateAccessToken(userID uint64, username string, role string, tokenVersion uint64) (string, error) {
+	return m.generateToken(userID, username, role, tokenVersion, m.cfg.AccessSecret, m.cfg.AccessExpire)
 }
 
 // GenerateRefreshToken 生成 RefreshToken
-func (j *tokenManager) GenerateRefreshToken(userID uint64, username string, role string, tokenVersion uint64) (string, error) {
-	return j.generateToken(userID, username, role, tokenVersion, j.cfg.RefreshSecret, j.cfg.RefreshExpire)
+func (m *tokenManager) GenerateRefreshToken(userID uint64, username string, role string, tokenVersion uint64) (string, error) {
+	return m.generateToken(userID, username, role, tokenVersion, m.cfg.RefreshSecret, m.cfg.RefreshExpire)
 }
 
 // ParseToken 检验并解析 Token
-func (j *tokenManager) ParseToken(tokenString string, isRefresh bool) (*CustomClaims, error) {
-	secret := j.cfg.AccessSecret
+func (m *tokenManager) ParseToken(tokenString string, isRefresh bool) (*CustomClaims, error) {
+	secret := m.cfg.AccessSecret
 	if isRefresh {
-		secret = j.cfg.RefreshSecret
+		secret = m.cfg.RefreshSecret
 	}
 
 	token, err := jwt.ParseWithClaims(
@@ -73,7 +73,7 @@ func (j *tokenManager) ParseToken(tokenString string, isRefresh bool) (*CustomCl
 		jwt.WithValidMethods([]string{
 			jwt.SigningMethodHS256.Alg(),
 		}),
-		jwt.WithIssuer(j.cfg.Issuer),
+		jwt.WithIssuer(m.cfg.Issuer),
 		jwt.WithExpirationRequired(),
 	)
 
@@ -88,7 +88,7 @@ func (j *tokenManager) ParseToken(tokenString string, isRefresh bool) (*CustomCl
 }
 
 // GenerateAgentToken 生成 AgentToken
-func (j *tokenManager) GenerateAgentToken(serverID uint64, version uint64) (string, error) {
+func (m *tokenManager) GenerateAgentToken(serverID uint64, version uint64) (string, error) {
 	if serverID == 0 || version == 0 {
 		return "", errors.New("serverID 或 version 无效")
 	}
@@ -97,27 +97,27 @@ func (j *tokenManager) GenerateAgentToken(serverID uint64, version uint64) (stri
 		Version: version,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: strconv.FormatUint(serverID, 10),
-			Issuer:  j.cfg.Issuer,
+			Issuer:  m.cfg.Issuer,
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.cfg.AgentSecret))
+	return token.SignedString([]byte(m.cfg.AgentSecret))
 }
 
 // ParseAgentToken 校验并解析 AgentToken
-func (j *tokenManager) ParseAgentToken(tokenString string) (uint64, uint64, error) {
+func (m *tokenManager) ParseAgentToken(tokenString string) (uint64, uint64, error) {
 	claims := &agentClaims{}
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		claims,
 		func(token *jwt.Token) (any, error) {
-			return []byte(j.cfg.AgentSecret), nil
+			return []byte(m.cfg.AgentSecret), nil
 		},
 		jwt.WithValidMethods([]string{
 			jwt.SigningMethodHS256.Alg(),
 		}),
-		jwt.WithIssuer(j.cfg.Issuer),
+		jwt.WithIssuer(m.cfg.Issuer),
 	)
 
 	if err != nil {
@@ -136,7 +136,7 @@ func (j *tokenManager) ParseAgentToken(tokenString string) (uint64, uint64, erro
 	return serverID, claims.Version, nil
 }
 
-func (j *tokenManager) generateToken(userID uint64, username, role string, tokenVersion uint64, secret string, expire time.Duration) (string, error) {
+func (m *tokenManager) generateToken(userID uint64, username, role string, tokenVersion uint64, secret string, expire time.Duration) (string, error) {
 	now := time.Now()
 	claims := CustomClaims{
 		UserID:       userID,
@@ -145,7 +145,7 @@ func (j *tokenManager) generateToken(userID uint64, username, role string, token
 		TokenVersion: tokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        uuid.NewString(),
-			Issuer:    j.cfg.Issuer,
+			Issuer:    m.cfg.Issuer,
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(expire)),

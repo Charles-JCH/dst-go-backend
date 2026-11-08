@@ -11,20 +11,26 @@ import (
 var ErrServerHasDst = errors.New("服务器仍有关联存档")
 
 type Repository interface {
-	AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error)
 	Create(ctx context.Context, server *entity.Server) error
 	GetByID(ctx context.Context, userID uint64, serverID uint64) (*entity.Server, error)
 	List(ctx context.Context, userID uint64, page int, pageSize int) ([]entity.Server, int64, error)
 	Update(ctx context.Context, userID uint64, serverID uint64, fields UpdateFields) error
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
+
+	// 以下为系统内部使用，不带 user_id 条件
+	FindByID(ctx context.Context, serverID uint64) (*entity.Server, error)
+	AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error)
+	SetSSHHostKey(ctx context.Context, serverID uint64, hostKey string) error
+	IncrAgentTokenVersion(ctx context.Context, serverID uint64) (uint64, error)
 }
 
 type UpdateFields struct {
-	Name     string
-	IP       string
-	Port     int
-	Username string
-	Password *string
+	Name       string
+	IP         string
+	Port       int
+	Username   string
+	Password   *string
+	SSHHostKey *string
 }
 
 type repository struct {
@@ -33,14 +39,6 @@ type repository struct {
 
 func NewRepository(db *gorm.DB) Repository {
 	return &repository{db: db}
-}
-
-func (r *repository) AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error) {
-	server, err := repo.First[entity.Server](r.getDB(ctx).Select("agent_token_version"), "id = ?", serverID)
-	if err != nil || server == nil {
-		return 0, false, err
-	}
-	return server.AgentTokenVersion, true, nil
 }
 
 func (r *repository) Create(ctx context.Context, server *entity.Server) error {
@@ -77,6 +75,9 @@ func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64,
 	}
 	if fields.Password != nil {
 		updates["password"] = *fields.Password
+	}
+	if fields.SSHHostKey != nil {
+		updates["ssh_host_key"] = *fields.SSHHostKey
 	}
 	result := r.getDB(ctx).
 		Model(&entity.Server{}).
@@ -121,6 +122,48 @@ func (r *repository) Delete(ctx context.Context, userID uint64, serverID uint64)
 		return repo.ErrNotFound
 	}
 	return ErrServerHasDst
+}
+
+func (r *repository) FindByID(ctx context.Context, serverID uint64) (*entity.Server, error) {
+	return repo.First[entity.Server](r.getDB(ctx), "id = ?", serverID)
+}
+
+func (r *repository) AgentTokenVersion(ctx context.Context, serverID uint64) (uint64, bool, error) {
+	server, err := repo.First[entity.Server](r.getDB(ctx).Select("agent_token_version"), "id = ?", serverID)
+	if err != nil || server == nil {
+		return 0, false, err
+	}
+	return server.AgentTokenVersion, true, nil
+}
+
+// SetSSHHostKey 只在尚未记录主机公钥时写入，首次信任后不会被覆盖
+func (r *repository) SetSSHHostKey(ctx context.Context, serverID uint64, hostKey string) error {
+	return repo.WrapError(r.getDB(ctx).
+		Model(&entity.Server{}).
+		Where("id = ? AND (ssh_host_key IS NULL OR ssh_host_key = '')", serverID).
+		Update("ssh_host_key", hostKey).Error)
+}
+
+// IncrAgentTokenVersion 递增 Agent 令牌版本让旧令牌失效，返回新版本号
+func (r *repository) IncrAgentTokenVersion(ctx context.Context, serverID uint64) (uint64, error) {
+	result := r.getDB(ctx).
+		Model(&entity.Server{}).
+		Where("id = ?", serverID).
+		Update("agent_token_version", gorm.Expr("agent_token_version + 1"))
+	if result.Error != nil {
+		return 0, repo.WrapError(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return 0, repo.ErrNotFound
+	}
+	version, isFound, err := r.AgentTokenVersion(ctx, serverID)
+	if err != nil {
+		return 0, err
+	}
+	if !isFound {
+		return 0, repo.ErrNotFound
+	}
+	return version, nil
 }
 
 func (r *repository) getDB(ctx context.Context) *gorm.DB {

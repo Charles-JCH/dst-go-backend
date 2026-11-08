@@ -11,6 +11,7 @@ import (
 	"game-panel/internal/handler/v1/task"
 	"game-panel/internal/middleware"
 	"game-panel/internal/platform/redis"
+	"game-panel/internal/realtime"
 	authservice "game-panel/internal/service/auth"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -18,12 +19,13 @@ import (
 
 // Handlers 汇总所有接口的 handler
 type Handlers struct {
-	Auth    *auth.Handler
-	GameEnv *gameenv.Handler
-	Server  *server.Handler
-	Dst     *dst.Handler
-	Task    *task.Handler
-	Agent   *agentmanager.Handler
+	Auth     *auth.Handler
+	GameEnv  *gameenv.Handler
+	Server   *server.Handler
+	Dst      *dst.Handler
+	Task     *task.Handler
+	Agent    *agentmanager.Handler
+	Realtime *realtime.Handler
 }
 
 func InitRouter(cfg config.ServerConfig, limiter redis.Limiter, authService authservice.Service, h Handlers) (*gin.Engine, error) {

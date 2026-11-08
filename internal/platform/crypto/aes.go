@@ -27,8 +27,8 @@ func NewAESEncryptor(key string) (Encryptor, error) {
 	return &aesGCMEncryptor{key: k}, nil
 }
 
-func (a *aesGCMEncryptor) Encrypt(plainText string) (string, error) {
-	block, err := aes.NewCipher(a.key)
+func (e *aesGCMEncryptor) Encrypt(plainText string) (string, error) {
+	block, err := aes.NewCipher(e.key)
 	if err != nil {
 		return "", err
 	}
@@ -47,13 +47,13 @@ func (a *aesGCMEncryptor) Encrypt(plainText string) (string, error) {
 	return hex.EncodeToString(ciphertext), nil
 }
 
-func (a *aesGCMEncryptor) Decrypt(cipherHex string) (string, error) {
+func (e *aesGCMEncryptor) Decrypt(cipherHex string) (string, error) {
 	data, err := hex.DecodeString(cipherHex)
 	if err != nil {
 		return "", err
 	}
 
-	block, err := aes.NewCipher(a.key)
+	block, err := aes.NewCipher(e.key)
 	if err != nil {
 		return "", err
 	}

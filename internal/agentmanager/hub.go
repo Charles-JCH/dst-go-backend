@@ -9,16 +9,18 @@ import (
 )
 
 type agentConn struct {
-	conn    *websocket.Conn
-	mu      sync.Mutex
-	pending map[string]struct{}
-	closed  bool
+	conn     *websocket.Conn
+	mu       sync.Mutex
+	pending  map[string]struct{}
+	isClosed bool
 }
 
 type Hub struct {
 	conns         map[uint64]*agentConn
 	mu            sync.RWMutex
 	OnInterrupted func(serverID uint64, commandID string)
+	OnOnline      func(serverID uint64)
+	OnOffline     func(serverID uint64)
 }
 
 func NewHub() *Hub {
@@ -39,6 +41,9 @@ func (h *Hub) Register(serverID uint64, conn *websocket.Conn) {
 	if old != nil {
 		h.closeAgent(serverID, old)
 	}
+	if h.OnOnline != nil {
+		h.OnOnline(serverID)
+	}
 }
 
 func (h *Hub) Unregister(serverID uint64, conn *websocket.Conn) {
@@ -52,25 +57,7 @@ func (h *Hub) Unregister(serverID uint64, conn *websocket.Conn) {
 	h.mu.Unlock()
 
 	h.closeAgent(serverID, current)
-}
-
-func (h *Hub) closeAgent(serverID uint64, agent *agentConn) {
-	agent.mu.Lock()
-	agent.closed = true
-	_ = agent.conn.Close()
-
-	ids := make([]string, 0, len(agent.pending))
-	for id := range agent.pending {
-		ids = append(ids, id)
-	}
-	clear(agent.pending)
-	agent.mu.Unlock()
-
-	if h.OnInterrupted != nil {
-		for _, id := range ids {
-			h.OnInterrupted(serverID, id)
-		}
-	}
+	h.offline(serverID)
 }
 
 func (h *Hub) Send(serverID uint64, env protocol.Envelope) error {
@@ -85,7 +72,7 @@ func (h *Hub) Send(serverID uint64, env protocol.Envelope) error {
 	agent.mu.Lock()
 	defer agent.mu.Unlock()
 
-	if agent.closed {
+	if agent.isClosed {
 		return fmt.Errorf("agent 连接已关闭 serverID=%d", serverID)
 	}
 
@@ -149,5 +136,31 @@ func (h *Hub) Disconnect(serverID uint64) {
 
 	if agent != nil {
 		h.closeAgent(serverID, agent)
+		h.offline(serverID)
+	}
+}
+
+func (h *Hub) closeAgent(serverID uint64, agent *agentConn) {
+	agent.mu.Lock()
+	agent.isClosed = true
+	_ = agent.conn.Close()
+
+	ids := make([]string, 0, len(agent.pending))
+	for id := range agent.pending {
+		ids = append(ids, id)
+	}
+	clear(agent.pending)
+	agent.mu.Unlock()
+
+	if h.OnInterrupted != nil {
+		for _, id := range ids {
+			h.OnInterrupted(serverID, id)
+		}
+	}
+}
+
+func (h *Hub) offline(serverID uint64) {
+	if h.OnOffline != nil {
+		h.OnOffline(serverID)
 	}
 }

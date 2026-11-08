@@ -18,6 +18,7 @@ type Config struct {
 	Captcha CaptchaConfig `mapstructure:"captcha"`
 	SMS     SMSConfig     `mapstructure:"sms"`
 	Crypto  CryptoConfig  `mapstructure:"crypto"`
+	Agent   AgentConfig   `mapstructure:"agent"`
 }
 
 type AppConfig struct {
@@ -31,20 +32,20 @@ type ServerConfig struct {
 	Port           int      `mapstructure:"port"`
 	Mode           string   `mapstructure:"mode"`
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
-	CookieSecure   bool     `mapstructure:"cookie_secure"`
+	IsCookieSecure bool     `mapstructure:"cookie_secure"`
 }
 
 type LogConfig struct {
-	Level      string `mapstructure:"level"`
-	Format     string `mapstructure:"format"`
-	ToConsole  bool   `mapstructure:"to_console"`
-	ToFile     bool   `mapstructure:"to_file"`
-	Dir        string `mapstructure:"dir"`
-	Filename   string `mapstructure:"filename"`
-	MaxSize    int    `mapstructure:"max_size"`
-	MaxBackups int    `mapstructure:"max_backups"`
-	MaxAge     int    `mapstructure:"max_age"`
-	Compress   bool   `mapstructure:"compress"`
+	Level             string `mapstructure:"level"`
+	Format            string `mapstructure:"format"`
+	IsConsoleEnabled  bool   `mapstructure:"to_console"`
+	IsFileEnabled     bool   `mapstructure:"to_file"`
+	Dir               string `mapstructure:"dir"`
+	Filename          string `mapstructure:"filename"`
+	MaxSize           int    `mapstructure:"max_size"`
+	MaxBackups        int    `mapstructure:"max_backups"`
+	MaxAge            int    `mapstructure:"max_age"`
+	IsCompressEnabled bool   `mapstructure:"compress"`
 }
 
 type MySQLConfig struct {
@@ -120,6 +121,13 @@ type SMSLimit struct {
 
 type CryptoConfig struct {
 	AESKey string `mapstructure:"aes_key"`
+}
+
+type AgentConfig struct {
+	BinaryDir     string        `mapstructure:"binary_dir"`
+	ScriptPath    string        `mapstructure:"script_path"`
+	WSURL         string        `mapstructure:"ws_url"`
+	OnlineTimeout time.Duration `mapstructure:"online_timeout"`
 }
 
 // Load 读取并解析配置文件

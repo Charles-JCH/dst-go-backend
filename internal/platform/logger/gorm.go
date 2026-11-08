@@ -12,16 +12,16 @@ import (
 )
 
 type GormLogger struct {
-	LogLevel                  logger.LogLevel
-	SlowThreshold             time.Duration
-	IgnoreRecordNotFoundError bool
+	LogLevel                logger.LogLevel
+	SlowThreshold           time.Duration
+	IsRecordNotFoundIgnored bool
 }
 
-func NewGormLogger(logLevel string, slowThreshold time.Duration, ignoreRecordNotFound bool) *GormLogger {
+func NewGormLogger(logLevel string, slowThreshold time.Duration, isRecordNotFoundIgnored bool) *GormLogger {
 	return &GormLogger{
-		LogLevel:                  parseGormLogLevel(logLevel),
-		SlowThreshold:             slowThreshold,
-		IgnoreRecordNotFoundError: ignoreRecordNotFound,
+		LogLevel:                parseGormLogLevel(logLevel),
+		SlowThreshold:           slowThreshold,
+		IsRecordNotFoundIgnored: isRecordNotFoundIgnored,
 	}
 }
 
@@ -60,7 +60,7 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	var message string
 
 	switch {
-	case err != nil && l.LogLevel >= logger.Error && (!l.IgnoreRecordNotFoundError || !errors.Is(err, gorm.ErrRecordNotFound)):
+	case err != nil && l.LogLevel >= logger.Error && !l.isExpected(err):
 		level = slog.LevelError
 		message = "sql 执行失败"
 	case l.SlowThreshold > 0 && elapsed > l.SlowThreshold && l.LogLevel >= logger.Warn:
@@ -112,4 +112,12 @@ func parseGormLogLevel(level string) logger.LogLevel {
 	default:
 		return logger.Info
 	}
+}
+
+// isExpected 业务上预期的错误不记录：唯一约束冲突由 service 转成 409，查无记录按配置忽略
+func (l *GormLogger) isExpected(err error) bool {
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return true
+	}
+	return l.IsRecordNotFoundIgnored && errors.Is(err, gorm.ErrRecordNotFound)
 }

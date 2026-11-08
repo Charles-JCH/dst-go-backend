@@ -8,3 +8,8 @@ type ListTaskReq struct {
 	ResourceType string `form:"resourceType" binding:"omitempty,max=64"`
 	ResourceID   uint64 `form:"resourceID"`
 }
+
+type ListTaskLogReq struct {
+	AfterID uint64 `form:"afterID"`
+	Limit   int    `form:"limit,default=500" binding:"min=1,max=1000"`
+}

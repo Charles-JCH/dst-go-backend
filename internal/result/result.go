@@ -21,11 +21,6 @@ func Success(c *gin.Context, data any) {
 	jsonResponse(c, http.StatusOK, http.StatusOK, "成功", data)
 }
 
-// SuccessWithMsg 自定义成功信息
-func SuccessWithMsg(c *gin.Context, msg string, data any) {
-	jsonResponse(c, http.StatusOK, http.StatusOK, msg, data)
-}
-
 // Fail 失败
 func Fail(c *gin.Context, err error) {
 	var bizErr *apperr.BizError

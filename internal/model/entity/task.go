@@ -1,14 +1,25 @@
 package entity
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
-	TaskTypeAgentDeploy = "agent_deploy"
-	TaskResourceServer  = "server"
+	TaskTypeAgentInstall = "agent_install"
+	TaskResourceServer   = "server"
+
 	TaskStatusPending   = "pending"
 	TaskStatusRunning   = "running"
 	TaskStatusSucceeded = "succeeded"
 	TaskStatusFailed    = "failed"
+
+	// Agent 安装任务的执行步骤
+	TaskStageQueued        = "queued"
+	TaskStageConnecting    = "connecting"
+	TaskStageUploading     = "uploading"
+	TaskStageInstalling    = "installing"
+	TaskStageWaitingOnline = "waiting_online"
 )
 
 type Task struct {
@@ -20,6 +31,8 @@ type Task struct {
 	ResourceType string     `gorm:"type:varchar(64);index:idx_task_user_resource,priority:2;comment:关联资源类型" json:"resourceType"`
 	ResourceID   uint64     `gorm:"type:bigint;not null;default:0;index:idx_task_user_resource,priority:3;comment:关联资源ID" json:"resourceID"`
 	UserID       uint64     `gorm:"type:bigint;not null;index:idx_task_user_resource,priority:1;comment:所属用户ID" json:"userID"`
+	CommandID    string     `gorm:"type:varchar(36);index;comment:下发给 Agent 的命令ID，SSH 执行的任务为空" json:"-"`
+	ActiveKey    *string    `gorm:"type:varchar(128);uniqueIndex;comment:进行中任务的唯一键，结束后置空，保证同一资源同类任务只有一个在执行" json:"-"`
 	ErrorMessage string     `gorm:"type:text;comment:任务失败原因" json:"errorMessage"`
 	StartedAt    *time.Time `gorm:"comment:开始执行时间" json:"startedAt"`
 	FinishedAt   *time.Time `gorm:"comment:执行结束时间" json:"finishedAt"`
@@ -27,4 +40,10 @@ type Task struct {
 
 func (Task) TableName() string {
 	return "task"
+}
+
+// TaskActiveKey 生成进行中任务的唯一键：同一资源的同类任务同时只能有一个
+func TaskActiveKey(taskType, resourceType string, resourceID uint64) *string {
+	key := fmt.Sprintf("%s:%s:%d", taskType, resourceType, resourceID)
+	return &key
 }

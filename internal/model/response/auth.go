@@ -11,3 +11,15 @@ type LoginResp struct {
 	Username    string `json:"username"`
 	Role        string `json:"role"`
 }
+
+type RefreshTokenResp struct {
+	AccessToken string `json:"accessToken"`
+}
+
+type ResetTokenResp struct {
+	ResetToken string `json:"resetToken"`
+}
+
+type WSTicketResp struct {
+	Ticket string `json:"ticket"`
+}

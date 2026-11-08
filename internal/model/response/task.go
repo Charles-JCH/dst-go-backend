@@ -43,3 +43,19 @@ func ToTaskResp(task *entity.Task) *TaskResp {
 		UpdatedAt:    task.UpdatedAt,
 	}
 }
+
+type TaskLogResp struct {
+	ID        uint64    `json:"id"`
+	TaskID    uint64    `json:"taskID"`
+	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+func ToTaskLogResp(log *entity.TaskLog) *TaskLogResp {
+	return &TaskLogResp{
+		ID:        log.ID,
+		TaskID:    log.TaskID,
+		Content:   log.Content,
+		CreatedAt: log.CreatedAt,
+	}
+}

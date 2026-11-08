@@ -6,19 +6,20 @@ import (
 )
 
 type ServerResp struct {
-	ID        uint64        `json:"id"`
-	Name      string        `json:"name"`
-	IP        string        `json:"ip"`
-	Port      int           `json:"port"`
-	Username  string        `json:"username"`
-	Cpu       int           `json:"cpu"`
-	Ram       int64         `json:"ram"`
-	Disk      int64         `json:"disk"`
-	OsName    string        `json:"osName"`
-	GameEnv   []GameEnvResp `json:"gameEnv"`
-	Mods      []string      `json:"mods"`
-	CreatedAt time.Time     `json:"createdAt"`
-	UpdatedAt time.Time     `json:"updatedAt"`
+	ID            uint64        `json:"id"`
+	Name          string        `json:"name"`
+	IP            string        `json:"ip"`
+	Port          int           `json:"port"`
+	Username      string        `json:"username"`
+	CPU           int           `json:"cpu"`
+	RAM           int64         `json:"ram"`
+	Disk          int64         `json:"disk"`
+	OSName        string        `json:"osName"`
+	GameEnv       []GameEnvResp `json:"gameEnv"`
+	Mods          []string      `json:"mods"`
+	IsAgentOnline bool          `json:"agentOnline"`
+	CreatedAt     time.Time     `json:"createdAt"`
+	UpdatedAt     time.Time     `json:"updatedAt"`
 }
 
 type ServerListResp struct {
@@ -28,7 +29,7 @@ type ServerListResp struct {
 	PageSize int          `json:"pageSize"`
 }
 
-func ToServerResp(server *entity.Server) *ServerResp {
+func ToServerResp(server *entity.Server, isAgentOnline bool) *ServerResp {
 	gameEnv := make([]GameEnvResp, 0, len(server.GameEnv))
 	for _, env := range server.GameEnv {
 		gameEnv = append(gameEnv, GameEnvResp{Code: env.Code, Name: env.Name})
@@ -40,18 +41,19 @@ func ToServerResp(server *entity.Server) *ServerResp {
 	}
 
 	return &ServerResp{
-		ID:        server.ID,
-		Name:      server.Name,
-		IP:        server.IP,
-		Port:      server.Port,
-		Username:  server.Username,
-		Cpu:       server.Cpu,
-		Ram:       server.Ram,
-		Disk:      server.Disk,
-		OsName:    server.OsName,
-		GameEnv:   gameEnv,
-		Mods:      mods,
-		CreatedAt: server.CreatedAt,
-		UpdatedAt: server.UpdatedAt,
+		ID:            server.ID,
+		Name:          server.Name,
+		IP:            server.IP,
+		Port:          server.Port,
+		Username:      server.Username,
+		CPU:           server.CPU,
+		RAM:           server.RAM,
+		Disk:          server.Disk,
+		OSName:        server.OSName,
+		GameEnv:       gameEnv,
+		Mods:          mods,
+		IsAgentOnline: isAgentOnline,
+		CreatedAt:     server.CreatedAt,
+		UpdatedAt:     server.UpdatedAt,
 	}
 }

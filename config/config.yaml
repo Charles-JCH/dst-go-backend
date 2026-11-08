@@ -85,3 +85,9 @@ sms:
 
 crypto:
   aes_key: "0123456789abcdef0123456789abcdef"
+
+agent:
+  binary_dir: "storage/agent"     # 编译好的 Agent 程序：dst-agent-linux-amd64、dst-agent-linux-arm64
+  script_path: "scripts/dst.sh"   # 安装时上传到用户服务器的 dst 脚本
+  ws_url: "ws://43.155.211.217:8080/api/v1/agent/ws"  # 用户服务器连接平台的地址，部署时改成公网可访问的地址
+  online_timeout: "60s"           # 启动 Agent 后等待其连上平台的时间

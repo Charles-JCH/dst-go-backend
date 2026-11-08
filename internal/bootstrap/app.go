@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"context"
 	"fmt"
 	"game-panel/internal/agentmanager"
 	"game-panel/internal/config"
@@ -14,6 +15,8 @@ import (
 	"game-panel/internal/platform/jwt"
 	"game-panel/internal/platform/redis"
 	"game-panel/internal/platform/sms"
+	"game-panel/internal/platform/ssh"
+	"game-panel/internal/realtime"
 	"game-panel/internal/repository"
 	"game-panel/internal/repository/cache"
 	dstrepo "game-panel/internal/repository/dst"
@@ -23,6 +26,7 @@ import (
 	"game-panel/internal/repository/user"
 	"game-panel/internal/router"
 	"game-panel/internal/service/agentevent"
+	"game-panel/internal/service/agentinstall"
 	authservice "game-panel/internal/service/auth"
 	captchaservice "game-panel/internal/service/captcha"
 	dstservice "game-panel/internal/service/dst"
@@ -84,6 +88,7 @@ func Run(configPath string) error {
 	jwtManager := jwt.NewTokenManager(jwt.Config(cfg.JWT))
 	passwordHasher := crypto.NewPasswordHasher()
 	agentHub := agentmanager.NewHub()
+	realtimeHub := realtime.NewHub()
 
 	// 初始化 SMS
 	var smsClient sms.Client
@@ -115,26 +120,39 @@ func Run(configPath string) error {
 	// service
 	captchaService := captchaservice.NewService(captchaManager)
 	smsService := smsservice.NewService(captchaManager, smsCache, smsClient, smsLimit, cache.SMSLimitPolicy(cfg.SMS.Limit))
-	authService := authservice.NewService(captchaService, smsService, jwtManager, authCache, userRepo, txManager, passwordHasher)
+	authService := authservice.NewService(captchaService, smsService, jwtManager, authCache, userRepo, passwordHasher)
 	gameEnvService := gameenvservice.NewService(gameEnvRepo)
-	serverService := serverservice.NewService(serverRepo, taskRepo, txManager, encryptor, agentHub)
+	agentInstaller := agentinstall.NewService(
+		agentinstall.Config(cfg.Agent),
+		serverRepo,
+		taskRepo,
+		encryptor,
+		jwtManager,
+		ssh.NewDialer(),
+		agentService,
+		realtimeHub,
+	)
+	serverService := serverservice.NewService(serverRepo, taskRepo, txManager, encryptor, agentInstaller, agentService)
 	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentService)
 	taskService := taskservice.NewService(taskRepo)
 
 	// handler
-	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.CookieSecure)
+	authHandler := authhandler.NewHandler(authService, cfg.JWT.RefreshExpire, cfg.Server.IsCookieSecure)
 	gameEnvHandler := gameenvhandler.NewHandler(gameEnvService)
 	serverHandler := serverhandler.NewHandler(serverService)
 	dstHandler := dsthandler.NewHandler(dstService)
 	taskHandler := taskhandler.NewHandler(taskService)
+	realtimeHandler := realtime.NewHandler(realtimeHub, authService, cfg.Server.AllowedOrigins)
 
 	// agent
 	agentAuth := agentmanager.NewAuth(jwtManager, serverRepo)
-	agentEvents := agentevent.NewService()
+	agentEvents := agentevent.NewService(serverRepo, realtimeHub)
 	agentService.OnAck = agentEvents.OnAck
 	agentService.OnLog = agentEvents.OnLog
 	agentService.OnResult = agentEvents.OnResult
 	agentService.OnInterrupted = agentEvents.OnInterrupted
+	agentService.OnOnline = agentEvents.OnOnline
+	agentService.OnOffline = agentEvents.OnOffline
 	agentHandler := agentmanager.NewHandler(agentHub, agentAuth, agentService)
 
 	// 注册参数校验规则
@@ -144,15 +162,21 @@ func Run(configPath string) error {
 
 	// 注册路由
 	engine, err := router.InitRouter(cfg.Server, limiter, authService, router.Handlers{
-		Auth:    authHandler,
-		GameEnv: gameEnvHandler,
-		Server:  serverHandler,
-		Dst:     dstHandler,
-		Task:    taskHandler,
-		Agent:   agentHandler,
+		Auth:     authHandler,
+		GameEnv:  gameEnvHandler,
+		Server:   serverHandler,
+		Dst:      dstHandler,
+		Task:     taskHandler,
+		Agent:    agentHandler,
+		Realtime: realtimeHandler,
 	})
 	if err != nil {
 		return err
+	}
+
+	// 处理上次运行时中断和未执行的 Agent 安装任务
+	if err := agentInstaller.Recover(context.Background()); err != nil {
+		return fmt.Errorf("Agent 安装任务恢复失败: %w", err)
 	}
 
 	return RunHTTPServer(cfg.Server, engine)

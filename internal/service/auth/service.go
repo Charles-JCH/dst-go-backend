@@ -26,11 +26,13 @@ type Service interface {
 	Register(ctx context.Context, req *request.RegisterReq) (*response.LoginResp, string, error)
 	Login(ctx context.Context, req *request.LoginReq) (*response.LoginResp, string, error)
 	LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (*response.LoginResp, string, error)
-	RefreshToken(ctx context.Context, refreshToken string) (string, string, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*response.RefreshTokenResp, string, error)
 	Logout(ctx context.Context, accessToken string, refreshToken string) error
-	VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error)
+	VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (*response.ResetTokenResp, error)
 	ResetPassword(ctx context.Context, req *request.ResetPasswordReq) error
 	GetProfile(ctx context.Context, userID uint64) (*response.UserResp, error)
+	IssueWSTicket(ctx context.Context, userID uint64) (*response.WSTicketResp, error)
+	ConsumeWSTicket(ctx context.Context, ticket string) (uint64, error)
 }
 
 type Identity struct {
@@ -45,7 +47,6 @@ type service struct {
 	jwtManager     jwt.TokenManager
 	authCache      cache.AuthCache
 	userRepo       userrepo.Repository
-	tx             repository.Transaction
 	hasher         crypto.PasswordHasher
 }
 
@@ -55,7 +56,6 @@ func NewService(
 	jwtManager jwt.TokenManager,
 	authCache cache.AuthCache,
 	userRepo userrepo.Repository,
-	tx repository.Transaction,
 	hasher crypto.PasswordHasher,
 ) Service {
 	return &service{
@@ -64,7 +64,6 @@ func NewService(
 		jwtManager:     jwtManager,
 		authCache:      authCache,
 		userRepo:       userRepo,
-		tx:             tx,
 		hasher:         hasher,
 	}
 }
@@ -130,6 +129,15 @@ func (s *service) Register(ctx context.Context, req *request.RegisterReq) (*resp
 		return nil, "", apperr.NewBizError(409, "用户名已注册")
 	}
 
+	// 先校验短信验证码，证明手机号归属后再告知是否已注册，避免不收短信就能探测手机号
+	isValid, err := s.smsService.VerifyCode(ctx, request.SMSSceneRegister, req.Phone, req.SMSCode)
+	if err != nil {
+		return nil, "", err
+	}
+	if !isValid {
+		return nil, "", apperr.NewBizError(400, "短信验证码错误或已过期")
+	}
+
 	// 手机号是否已注册
 	existUser, err = s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
@@ -138,15 +146,6 @@ func (s *service) Register(ctx context.Context, req *request.RegisterReq) (*resp
 	}
 	if existUser != nil {
 		return nil, "", apperr.NewBizError(409, "手机号已注册")
-	}
-
-	// 校验短信验证码
-	valid, err := s.smsService.VerifyCode(ctx, request.SMSSceneRegister, req.Phone, req.SMSCode)
-	if err != nil {
-		return nil, "", err
-	}
-	if !valid {
-		return nil, "", apperr.NewBizError(400, "短信验证码错误或已过期")
 	}
 
 	// 密码哈希
@@ -180,12 +179,12 @@ func (s *service) Register(ctx context.Context, req *request.RegisterReq) (*resp
 // Login 用户登录逻辑
 func (s *service) Login(ctx context.Context, req *request.LoginReq) (*response.LoginResp, string, error) {
 	// 校验图形验证码
-	valid, err := s.captchaService.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
+	isValid, err := s.captchaService.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
 	if err != nil {
 		slog.ErrorContext(ctx, "图形验证码读取失败", "error", err)
 		return nil, "", apperr.NewBizError(503, "图形验证码服务不可用")
 	}
-	if !valid {
+	if !isValid {
 		return nil, "", apperr.NewBizError(400, "图形验证码错误或已过期")
 	}
 
@@ -212,11 +211,11 @@ func (s *service) Login(ctx context.Context, req *request.LoginReq) (*response.L
 
 func (s *service) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (*response.LoginResp, string, error) {
 	// 校验短信验证码
-	valid, err := s.smsService.VerifyCode(ctx, request.SMSSceneLogin, req.Phone, req.SMSCode)
+	isValid, err := s.smsService.VerifyCode(ctx, request.SMSSceneLogin, req.Phone, req.SMSCode)
 	if err != nil {
 		return nil, "", err
 	}
-	if !valid {
+	if !isValid {
 		return nil, "", apperr.NewBizError(400, "短信验证码错误或已过期")
 	}
 
@@ -240,60 +239,60 @@ func (s *service) LoginBySMS(ctx context.Context, req *request.LoginBySMSReq) (*
 }
 
 // RefreshToken 刷新 AccessToken、RefreshToken
-func (s *service) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
+func (s *service) RefreshToken(ctx context.Context, refreshToken string) (*response.RefreshTokenResp, string, error) {
 	if refreshToken == "" {
-		return "", "", apperr.NewBizError(401, "刷新凭证缺失")
+		return nil, "", apperr.NewBizError(401, "刷新凭证缺失")
 	}
 
 	// 解析 refreshToken
 	claims, err := s.jwtManager.ParseToken(refreshToken, true)
 	if err != nil {
-		return "", "", apperr.NewBizError(401, "刷新凭证无效或已过期")
+		return nil, "", apperr.NewBizError(401, "刷新凭证无效或已过期")
 	}
 	if claims.ExpiresAt == nil {
-		return "", "", apperr.NewBizError(401, "刷新凭证无效")
+		return nil, "", apperr.NewBizError(401, "刷新凭证无效")
 	}
 
 	// 查询用户是否存在
 	user, err := s.userRepo.GetByID(ctx, claims.UserID)
 	if err != nil {
 		slog.ErrorContext(ctx, "用户查询失败", "userID", claims.UserID, "error", err)
-		return "", "", apperr.NewBizError(500, "身份认证服务不可用")
+		return nil, "", apperr.NewBizError(500, "身份认证服务不可用")
 	}
 	if user == nil {
-		return "", "", apperr.NewBizError(401, "用户不存在")
+		return nil, "", apperr.NewBizError(401, "用户不存在")
 	}
 	if claims.TokenVersion != user.TokenVersion {
-		return "", "", apperr.NewBizError(401, "登录状态已失效")
+		return nil, "", apperr.NewBizError(401, "登录状态已失效")
 	}
 
 	// 校验用户状态
 	if user.Status != 1 {
-		return "", "", apperr.NewBizError(403, "账号已禁用")
+		return nil, "", apperr.NewBizError(403, "账号已禁用")
 	}
 
 	// refreshToken 剩余时间
 	remainingTTL := time.Until(claims.ExpiresAt.Time)
 	if remainingTTL <= 0 {
-		return "", "", apperr.NewBizError(401, "刷新凭证已过期")
+		return nil, "", apperr.NewBizError(401, "刷新凭证已过期")
 	}
 
 	// 签发 accessToken 和 refreshToken
 	newAccessToken, newRefreshToken, err := s.issueTokens(ctx, user)
 	if err != nil {
-		return "", "", err
+		return nil, "", err
 	}
 
 	// 消费旧 refreshToken
-	consumed, err := s.authCache.ConsumeRefreshToken(ctx, claims.ID, remainingTTL)
+	isConsumed, err := s.authCache.ConsumeRefreshToken(ctx, claims.ID, remainingTTL)
 	if err != nil {
 		slog.ErrorContext(ctx, "刷新凭证消费失败", "userID", user.ID, "error", err)
-		return "", "", apperr.NewBizError(500, "身份认证服务不可用")
+		return nil, "", apperr.NewBizError(500, "身份认证服务不可用")
 	}
-	if !consumed {
-		return "", "", apperr.NewBizError(409, "刷新凭证已使用")
+	if !isConsumed {
+		return nil, "", apperr.NewBizError(409, "刷新凭证已使用")
 	}
-	return newAccessToken, newRefreshToken, nil
+	return &response.RefreshTokenResp{AccessToken: newAccessToken}, newRefreshToken, nil
 }
 
 // Logout 登出
@@ -310,33 +309,33 @@ func (s *service) Logout(ctx context.Context, accessToken string, refreshToken s
 }
 
 // VerifyResetCode 重置密码第一步
-func (s *service) VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (string, error) {
-	valid, err := s.smsService.VerifyCode(ctx, request.SMSSceneReset, req.Phone, req.SMSCode)
+func (s *service) VerifyResetCode(ctx context.Context, req *request.VerifyResetCodeReq) (*response.ResetTokenResp, error) {
+	isValid, err := s.smsService.VerifyCode(ctx, request.SMSSceneReset, req.Phone, req.SMSCode)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if !valid {
-		return "", apperr.NewBizError(400, "短信验证码错误或已过期")
+	if !isValid {
+		return nil, apperr.NewBizError(400, "短信验证码错误或已过期")
 	}
 
 	// 查询用户
 	user, err := s.userRepo.GetByPhone(ctx, req.Phone)
 	if err != nil {
 		slog.ErrorContext(ctx, "用户查询失败", "phone", req.Phone, "error", err)
-		return "", apperr.NewBizError(500, "密码重置服务不可用")
+		return nil, apperr.NewBizError(500, "密码重置服务不可用")
 	}
 	if user == nil {
-		return "", apperr.NewBizError(404, "手机号未注册")
+		return nil, apperr.NewBizError(404, "手机号未注册")
 	}
 
 	// 生成 resetToken
 	resetToken := uuid.NewString()
 	if err := s.authCache.SetResetToken(ctx, resetToken, user.ID, user.TokenVersion, 10*time.Minute); err != nil {
 		slog.ErrorContext(ctx, "密码重置凭证保存失败", "userID", user.ID, "error", err)
-		return "", apperr.NewBizError(500, "密码重置服务不可用")
+		return nil, apperr.NewBizError(500, "密码重置服务不可用")
 	}
 
-	return resetToken, nil
+	return &response.ResetTokenResp{ResetToken: resetToken}, nil
 }
 
 // ResetPassword 重置密码第二步
@@ -402,6 +401,29 @@ func (s *service) GetProfile(ctx context.Context, userID uint64) (*response.User
 	}
 
 	return response.ToUserResp(user), nil
+}
+
+// IssueWSTicket 签发浏览器 WebSocket 用的一次性 ticket，30 秒内有效
+func (s *service) IssueWSTicket(ctx context.Context, userID uint64) (*response.WSTicketResp, error) {
+	ticket := uuid.NewString()
+	if err := s.authCache.SetWSTicket(ctx, ticket, userID, 30*time.Second); err != nil {
+		slog.ErrorContext(ctx, "实时连接凭证保存失败", "userID", userID, "error", err)
+		return nil, apperr.NewBizError(500, "实时连接服务不可用")
+	}
+	return &response.WSTicketResp{Ticket: ticket}, nil
+}
+
+// ConsumeWSTicket 消费 ticket，返回对应的用户 ID
+func (s *service) ConsumeWSTicket(ctx context.Context, ticket string) (uint64, error) {
+	userID, err := s.authCache.ConsumeWSTicket(ctx, ticket)
+	if err != nil {
+		slog.ErrorContext(ctx, "实时连接凭证读取失败", "error", err)
+		return 0, apperr.NewBizError(500, "实时连接服务不可用")
+	}
+	if userID == 0 {
+		return 0, apperr.NewBizError(401, "实时连接凭证无效或已过期")
+	}
+	return userID, nil
 }
 
 // issueLogin 签发凭证并生成登录响应，返回登录响应和 refreshToken

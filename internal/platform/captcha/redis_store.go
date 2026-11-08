@@ -31,10 +31,10 @@ func (s *RedisStore) Set(id string, value string) error {
 }
 
 // Get 获取验证码（base64Captcha.Store 接口方法，接口不带 ctx 且无法返回错误）
-func (s *RedisStore) Get(id string, clear bool) string {
+func (s *RedisStore) Get(id string, isClear bool) string {
 	ctx := context.Background()
 
-	val, err := s.GetWithContext(ctx, id, clear)
+	val, err := s.GetWithContext(ctx, id, isClear)
 	if err != nil {
 		// 接口无法返回错误，只能在这里记录；业务代码走 GetWithContext，由 service 记录
 		slog.ErrorContext(ctx, "图形验证码读取失败", "error", err)
@@ -44,13 +44,13 @@ func (s *RedisStore) Get(id string, clear bool) string {
 	return val
 }
 
-// GetWithContext 带 ctx 读取验证码，clear 为 true 时读取后删除；不存在返回空字符串
-func (s *RedisStore) GetWithContext(ctx context.Context, id string, clear bool) (string, error) {
+// GetWithContext 带 ctx 读取验证码，isClear 为 true 时读取后删除；不存在返回空字符串
+func (s *RedisStore) GetWithContext(ctx context.Context, id string, isClear bool) (string, error) {
 	key := s.prefix + id
 	var val string
 	var err error
 
-	if clear {
+	if isClear {
 		val, err = s.client.GetDel(ctx, key).Result()
 	} else {
 		val, err = s.client.Get(ctx, key).Result()
@@ -66,7 +66,7 @@ func (s *RedisStore) GetWithContext(ctx context.Context, id string, clear bool) 
 }
 
 // Verify 校验验证码（base64Captcha.Store 接口方法，业务代码请用 captcha.Verify）
-func (s *RedisStore) Verify(id, answer string, clear bool) bool {
-	v := s.Get(id, clear)
+func (s *RedisStore) Verify(id, answer string, isClear bool) bool {
+	v := s.Get(id, isClear)
 	return v != "" && v == answer
 }

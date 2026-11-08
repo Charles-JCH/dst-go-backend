@@ -9,8 +9,9 @@ import (
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
 	"game-panel/internal/repository"
-	"game-panel/internal/repository/server"
-	"game-panel/internal/repository/task"
+	serverrepo "game-panel/internal/repository/server"
+	taskrepo "game-panel/internal/repository/task"
+	"game-panel/internal/service/agentinstall"
 	"log/slog"
 	"net/netip"
 	"strings"
@@ -22,35 +23,48 @@ type Service interface {
 	List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error)
 	Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
+	InstallAgent(ctx context.Context, userID uint64, serverID uint64) (*response.TaskResp, error)
 }
 
-type AgentHub interface {
+// AgentConn 查询、卸载和断开 Agent（agentmanager.Service 未导出接口）
+type AgentConn interface {
+	IsOnline(serverID uint64) bool
+	Uninstall(serverID uint64) error
 	Disconnect(serverID uint64)
 }
 
 type service struct {
-	serverRepo server.Repository
-	taskRepo   task.Repository
+	serverRepo serverrepo.Repository
+	taskRepo   taskrepo.Repository
 	txManager  repository.Transaction
 	encryptor  crypto.Encryptor
-	agent      AgentHub
+	installer  agentinstall.Service
+	agent      AgentConn
 }
 
-func NewService(serverRepo server.Repository, taskRepo task.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, agent AgentHub) Service {
+func NewService(
+	serverRepo serverrepo.Repository,
+	taskRepo taskrepo.Repository,
+	txManager repository.Transaction,
+	encryptor crypto.Encryptor,
+	installer agentinstall.Service,
+	agent AgentConn,
+) Service {
 	return &service{
 		serverRepo: serverRepo,
 		taskRepo:   taskRepo,
 		txManager:  txManager,
 		encryptor:  encryptor,
+		installer:  installer,
 		agent:      agent,
 	}
 }
 
+// Create 保存服务器并创建 Agent 安装任务；安装失败不影响服务器保存，可在页面重试
 func (s *service) Create(ctx context.Context, userID uint64, req *request.CreateServerReq) (*response.ServerResp, error) {
 	name := strings.TrimSpace(req.Name)
-	username := strings.TrimSpace(req.Username)
-	if name == "" || username == "" {
-		return nil, apperr.NewBizError(400, "服务器名称或SSH用户名为空")
+	if name == "" {
+		return nil, apperr.NewBizError(400, "服务器名称为空")
 	}
 
 	addr, err := netip.ParseAddr(req.IP)
@@ -69,29 +83,21 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 		Name:     name,
 		IP:       ip,
 		Port:     req.Port,
-		Username: username,
+		Username: req.Username,
 		Password: password,
 		GameEnv:  []entity.GameEnvRef{},
 		Mods:     []string{},
 		UserID:   userID,
 	}
 
-	// 创建服务器
+	// 服务器和安装任务同一事务写入，提交后再开始执行任务
+	var installTask *entity.Task
 	err = s.txManager.ExecTx(ctx, func(txCtx context.Context) error {
 		if err := s.serverRepo.Create(txCtx, server); err != nil {
 			return err
 		}
-		task := &entity.Task{
-			Name:         "部署服务器 Agent",
-			Type:         entity.TaskTypeAgentDeploy,
-			Status:       entity.TaskStatusPending,
-			Stage:        "queued",
-			ResourceType: entity.TaskResourceServer,
-			ResourceID:   server.ID,
-			UserID:       userID,
-		}
-
-		return s.taskRepo.Create(txCtx, task)
+		installTask = newInstallTask(userID, server.ID)
+		return s.taskRepo.Create(txCtx, installTask)
 	})
 	if errors.Is(err, repository.ErrDuplicate) {
 		return nil, apperr.NewBizError(409, "该IP和SSH端口的服务器已存在")
@@ -100,7 +106,9 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 		slog.ErrorContext(ctx, "服务器创建失败", "userID", userID, "error", err)
 		return nil, apperr.NewBizError(500, "服务器创建失败")
 	}
-	return response.ToServerResp(server), nil
+
+	s.installer.Enqueue(installTask.ID)
+	return s.toResp(server), nil
 }
 
 func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (*response.ServerResp, error) {
@@ -112,7 +120,7 @@ func (s *service) GetByID(ctx context.Context, userID uint64, serverID uint64) (
 	if server == nil {
 		return nil, apperr.NewBizError(404, "服务器不存在")
 	}
-	return response.ToServerResp(server), nil
+	return s.toResp(server), nil
 }
 
 func (s *service) List(ctx context.Context, userID uint64, req *request.ListServerReq) (*response.ServerListResp, error) {
@@ -123,7 +131,7 @@ func (s *service) List(ctx context.Context, userID uint64, req *request.ListServ
 	}
 	list := make([]response.ServerResp, 0, len(servers))
 	for i := range servers {
-		list = append(list, *response.ToServerResp(&servers[i]))
+		list = append(list, *s.toResp(&servers[i]))
 	}
 	return &response.ServerListResp{
 		List:     list,
@@ -135,9 +143,8 @@ func (s *service) List(ctx context.Context, userID uint64, req *request.ListServ
 
 func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error {
 	name := strings.TrimSpace(req.Name)
-	username := strings.TrimSpace(req.Username)
-	if name == "" || username == "" {
-		return apperr.NewBizError(400, "服务器名称或SSH用户名为空")
+	if name == "" {
+		return apperr.NewBizError(400, "服务器名称为空")
 	}
 
 	addr, err := netip.ParseAddr(req.IP)
@@ -146,7 +153,16 @@ func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, re
 	}
 	ip := addr.Unmap().String()
 
-	fields := server.UpdateFields{Name: name, IP: ip, Port: req.Port, Username: username}
+	current, err := s.serverRepo.GetByID(ctx, userID, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
+		return apperr.NewBizError(500, "服务器更新失败")
+	}
+	if current == nil {
+		return apperr.NewBizError(404, "服务器不存在")
+	}
+
+	fields := serverrepo.UpdateFields{Name: name, IP: ip, Port: req.Port, Username: req.Username}
 	// 密码为 nil 表示不修改
 	if req.Password != nil {
 		password, err := s.encryptor.Encrypt(*req.Password)
@@ -156,6 +172,12 @@ func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, re
 		}
 		fields.Password = &password
 	}
+	// 换了地址，或重新填写了密码（如服务器重装系统），下次连接重新信任主机指纹
+	if ip != current.IP || req.Port != current.Port || req.Password != nil {
+		empty := ""
+		fields.SSHHostKey = &empty
+	}
+
 	err = s.serverRepo.Update(ctx, userID, serverID, fields)
 	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "服务器不存在")
@@ -170,9 +192,20 @@ func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, re
 	return nil
 }
 
+// Delete 删除服务器；Agent 在线时通知它卸载自己，离线时需用户手动清理
 func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) error {
-	err := s.serverRepo.Delete(ctx, userID, serverID)
-	if errors.Is(err, server.ErrServerHasDst) {
+	// 安装中删除会留下刚装好的 Agent，等安装结束再删
+	isInstalling, err := s.hasActiveInstall(ctx, userID, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "任务查询失败", "userID", userID, "serverID", serverID, "error", err)
+		return apperr.NewBizError(500, "服务器删除失败")
+	}
+	if isInstalling {
+		return apperr.NewBizError(409, "Agent 正在安装，请等待安装结束后再删除")
+	}
+
+	err = s.serverRepo.Delete(ctx, userID, serverID)
+	if errors.Is(err, serverrepo.ErrServerHasDst) {
 		return apperr.NewBizError(409, "服务器下仍有存档，请先删除存档")
 	}
 	if errors.Is(err, repository.ErrNotFound) {
@@ -183,7 +216,68 @@ func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) er
 		return apperr.NewBizError(500, "服务器删除失败")
 	}
 
-	// 关闭 agent 连接
+	// 服务器已删除，卸载通知失败不影响结果：Agent 的令牌随服务器一起失效，无法再连上平台
+	if s.agent.IsOnline(serverID) {
+		if err := s.agent.Uninstall(serverID); err != nil {
+			slog.WarnContext(ctx, "Agent 卸载通知发送失败", "serverID", serverID, "error", err)
+		}
+	}
 	s.agent.Disconnect(serverID)
 	return nil
+}
+
+// InstallAgent 重新安装 Agent（安装失败后重试）；已有进行中的安装任务时返回 409
+func (s *service) InstallAgent(ctx context.Context, userID uint64, serverID uint64) (*response.TaskResp, error) {
+	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
+		return nil, apperr.NewBizError(500, "Agent 安装任务创建失败")
+	}
+	if server == nil {
+		return nil, apperr.NewBizError(404, "服务器不存在")
+	}
+
+	installTask := newInstallTask(userID, serverID)
+	err = s.taskRepo.Create(ctx, installTask)
+	if errors.Is(err, repository.ErrDuplicate) {
+		return nil, apperr.NewBizError(409, "Agent 安装任务正在进行中")
+	}
+	if err != nil {
+		slog.ErrorContext(ctx, "Agent 安装任务创建失败", "userID", userID, "serverID", serverID, "error", err)
+		return nil, apperr.NewBizError(500, "Agent 安装任务创建失败")
+	}
+
+	s.installer.Enqueue(installTask.ID)
+	return response.ToTaskResp(installTask), nil
+}
+
+// newInstallTask 创建待执行的 Agent 安装任务；ActiveKey 保证同一服务器同时只有一个安装任务
+func newInstallTask(userID uint64, serverID uint64) *entity.Task {
+	return &entity.Task{
+		Name:         "安装 Agent",
+		Type:         entity.TaskTypeAgentInstall,
+		Status:       entity.TaskStatusPending,
+		Stage:        entity.TaskStageQueued,
+		ResourceType: entity.TaskResourceServer,
+		ResourceID:   serverID,
+		UserID:       userID,
+		ActiveKey:    entity.TaskActiveKey(entity.TaskTypeAgentInstall, entity.TaskResourceServer, serverID),
+	}
+}
+
+func (s *service) toResp(server *entity.Server) *response.ServerResp {
+	return response.ToServerResp(server, s.agent.IsOnline(server.ID))
+}
+
+func (s *service) hasActiveInstall(ctx context.Context, userID uint64, serverID uint64) (bool, error) {
+	tasks, err := s.taskRepo.ListActive(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	for _, t := range tasks {
+		if t.Type == entity.TaskTypeAgentInstall && t.ResourceType == entity.TaskResourceServer && t.ResourceID == serverID {
+			return true, nil
+		}
+	}
+	return false, nil
 }

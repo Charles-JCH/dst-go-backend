@@ -12,12 +12,12 @@ type CreateDstReq struct {
 }
 
 type UpdateDstReq struct {
-	Name         string   `json:"name" binding:"required,max=64"`
-	Description  string   `json:"description" binding:"omitempty,max=255"`
-	Password     *string  `json:"password" binding:"omitempty,max=64"`
-	MaxPlayers   int      `json:"maxPlayers" binding:"required,min=1"`
-	ClusterToken *string  `json:"clusterToken" binding:"omitempty,max=255"`
-	Mods         []string `json:"mods" binding:"max=200,dive,required,number,max=32"`
+	Name         string    `json:"name" binding:"required,max=64"`
+	Description  *string   `json:"description" binding:"omitempty,max=255"`
+	Password     *string   `json:"password" binding:"omitempty,max=64"`
+	MaxPlayers   int       `json:"maxPlayers" binding:"required,min=1"`
+	ClusterToken *string   `json:"clusterToken" binding:"omitempty,max=255"`
+	Mods         *[]string `json:"mods" binding:"omitempty,max=200,dive,required,number,max=32"`
 }
 
 type ListDstReq struct {

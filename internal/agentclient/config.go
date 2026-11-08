@@ -11,10 +11,11 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Executor ExecutorConfig `mapstructure:"executor"`
 	Identity IdentityConfig `mapstructure:"identity"`
+	Service  ServiceConfig  `mapstructure:"service"`
 }
 
 type ServerConfig struct {
-	WSUrl             string        `mapstructure:"ws_url"`
+	WSURL             string        `mapstructure:"ws_url"`
 	HeartbeatInterval time.Duration `mapstructure:"heartbeat_interval"`
 	ConnectTimeout    time.Duration `mapstructure:"connect_timeout"`
 	ReconnectInterval time.Duration `mapstructure:"reconnect_interval"`
@@ -27,6 +28,12 @@ type ExecutorConfig struct {
 
 type IdentityConfig struct {
 	Path string `mapstructure:"path"`
+}
+
+type ServiceConfig struct {
+	Name       string `mapstructure:"name"`
+	UnitPath   string `mapstructure:"unit_path"`
+	InstallDir string `mapstructure:"install_dir"`
 }
 
 // Load 读取并解析配置文件

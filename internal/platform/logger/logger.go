@@ -12,17 +12,17 @@ import (
 )
 
 type Config struct {
-	Level      string
-	Format     string
-	ToConsole  bool
-	ToFile     bool
-	Dir        string
-	Filename   string
-	MaxSize    int
-	MaxBackups int
-	MaxAge     int
-	Compress   bool
-	AddSource  bool
+	Level             string
+	Format            string
+	IsConsoleEnabled  bool
+	IsFileEnabled     bool
+	Dir               string
+	Filename          string
+	MaxSize           int
+	MaxBackups        int
+	MaxAge            int
+	IsCompressEnabled bool
+	IsSourceEnabled   bool
 }
 
 func NewLogger(cfg *Config) (*slog.Logger, error) {
@@ -33,12 +33,12 @@ func NewLogger(cfg *Config) (*slog.Logger, error) {
 	var writers []io.Writer
 
 	// 控制台输出
-	if cfg.ToConsole {
+	if cfg.IsConsoleEnabled {
 		writers = append(writers, os.Stdout)
 	}
 
 	// 文件输出
-	if cfg.ToFile && cfg.Filename != "" {
+	if cfg.IsFileEnabled && cfg.Filename != "" {
 		if err := os.MkdirAll(cfg.Dir, os.ModePerm); err != nil {
 			return nil, fmt.Errorf("日志目录创建失败 path=%q: %w", cfg.Dir, err)
 		}
@@ -49,7 +49,7 @@ func NewLogger(cfg *Config) (*slog.Logger, error) {
 			MaxSize:    cfg.MaxSize,
 			MaxBackups: cfg.MaxBackups,
 			MaxAge:     cfg.MaxAge,
-			Compress:   cfg.Compress,
+			Compress:   cfg.IsCompressEnabled,
 		}
 		writers = append(writers, fileWriter)
 	}
@@ -63,7 +63,7 @@ func NewLogger(cfg *Config) (*slog.Logger, error) {
 
 	opts := &slog.HandlerOptions{
 		Level:     level,
-		AddSource: cfg.AddSource,
+		AddSource: cfg.IsSourceEnabled,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.TimeKey {
 				if t, ok := a.Value.Any().(time.Time); ok {

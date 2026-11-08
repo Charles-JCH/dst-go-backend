@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp, error)
-	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
+	Verify(ctx context.Context, id string, answer string, isClear bool) (bool, error)
 }
 
 type service struct {
@@ -34,6 +34,6 @@ func (s *service) GenerateCaptcha(ctx context.Context) (*response.GetCaptchaResp
 	}, nil
 }
 
-func (s *service) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
-	return s.captcha.Verify(ctx, id, answer, clear)
+func (s *service) Verify(ctx context.Context, id string, answer string, isClear bool) (bool, error) {
+	return s.captcha.Verify(ctx, id, answer, isClear)
 }

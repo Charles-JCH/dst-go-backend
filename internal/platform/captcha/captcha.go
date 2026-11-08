@@ -18,7 +18,7 @@ type Config struct {
 
 type Captcha interface {
 	Generate() (id string, b64s string, err error)
-	Verify(ctx context.Context, id string, answer string, clear bool) (bool, error)
+	Verify(ctx context.Context, id string, answer string, isClear bool) (bool, error)
 }
 
 type captcha struct {
@@ -53,8 +53,8 @@ func (c *captcha) Generate() (id string, b64s string, err error) {
 }
 
 // Verify 校验验证码，绕过 base64Captcha 直接读取 store，以便带上 ctx 并把 Redis 错误返回给调用方
-func (c *captcha) Verify(ctx context.Context, id string, answer string, clear bool) (bool, error) {
-	value, err := c.store.GetWithContext(ctx, id, clear)
+func (c *captcha) Verify(ctx context.Context, id string, answer string, isClear bool) (bool, error) {
+	value, err := c.store.GetWithContext(ctx, id, isClear)
 	if err != nil {
 		return false, err
 	}

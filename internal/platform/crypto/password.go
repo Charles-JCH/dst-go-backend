@@ -18,13 +18,13 @@ func NewPasswordHasher() PasswordHasher {
 }
 
 // HashPassword 生成密码哈希
-func (b *bcryptHasher) HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), b.cost)
+func (h *bcryptHasher) HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), h.cost)
 	return string(bytes), err
 }
 
 // ComparePassword 校验明文密码与密码哈希是否一致
-func (b *bcryptHasher) ComparePassword(hashedPassword string, password string) bool {
+func (h *bcryptHasher) ComparePassword(hashedPassword string, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	return err == nil
 }

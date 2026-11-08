@@ -16,16 +16,16 @@ const (
 )
 
 type Handler struct {
-	authService   auth.Service
-	refreshExpire time.Duration
-	cookieSecure  bool
+	authService    auth.Service
+	refreshExpire  time.Duration
+	isCookieSecure bool
 }
 
-func NewHandler(authService auth.Service, refreshExpire time.Duration, cookieSecure bool) *Handler {
+func NewHandler(authService auth.Service, refreshExpire time.Duration, isCookieSecure bool) *Handler {
 	return &Handler{
-		authService:   authService,
-		refreshExpire: refreshExpire,
-		cookieSecure:  cookieSecure,
+		authService:    authService,
+		refreshExpire:  refreshExpire,
+		isCookieSecure: isCookieSecure,
 	}
 }
 
@@ -114,15 +114,13 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		result.FailWithMsg(c, 401, "刷新凭证缺失")
 		return
 	}
-	newAccessToken, newRefreshToken, err := h.authService.RefreshToken(c.Request.Context(), refreshToken)
+	resp, newRefreshToken, err := h.authService.RefreshToken(c.Request.Context(), refreshToken)
 	if err != nil {
 		result.Fail(c, err)
 		return
 	}
 	h.setRefreshTokenCookie(c, newRefreshToken)
-	result.Success(c, gin.H{
-		"accessToken": newAccessToken,
-	})
+	result.Success(c, resp)
 }
 
 // Logout 退出登录
@@ -153,14 +151,12 @@ func (h *Handler) VerifyResetCode(c *gin.Context) {
 		result.FailWithMsg(c, 400, "请求参数无效")
 		return
 	}
-	resetToken, err := h.authService.VerifyResetCode(c.Request.Context(), &req)
+	resp, err := h.authService.VerifyResetCode(c.Request.Context(), &req)
 	if err != nil {
 		result.Fail(c, err)
 		return
 	}
-	result.Success(c, gin.H{
-		"resetToken": resetToken,
-	})
+	result.Success(c, resp)
 }
 
 // ResetPassword 重置密码第二步
@@ -189,6 +185,17 @@ func (h *Handler) GetProfile(c *gin.Context) {
 	result.Success(c, user)
 }
 
+// IssueWSTicket 签发浏览器 WebSocket 的一次性 ticket
+// [POST] /api/v1/ws/ticket
+func (h *Handler) IssueWSTicket(c *gin.Context) {
+	resp, err := h.authService.IssueWSTicket(c.Request.Context(), c.GetUint64("userID"))
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
 // setRefreshTokenCookie 设置 HttpOnly Cookie
 func (h *Handler) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
 	c.SetSameSite(http.SameSiteStrictMode)
@@ -198,7 +205,7 @@ func (h *Handler) setRefreshTokenCookie(c *gin.Context, refreshToken string) {
 		int(h.refreshExpire/time.Second),
 		RefreshTokenCookiePath,
 		"",
-		h.cookieSecure,
+		h.isCookieSecure,
 		true,
 	)
 }
@@ -212,7 +219,7 @@ func (h *Handler) clearRefreshTokenCookie(c *gin.Context) {
 		-1,
 		RefreshTokenCookiePath,
 		"",
-		h.cookieSecure,
+		h.isCookieSecure,
 		true,
 	)
 }

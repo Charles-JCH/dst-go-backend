@@ -50,12 +50,12 @@ func (s *service) SendCode(ctx context.Context, clientIP string, req *request.Se
 	}
 
 	// 校验并销毁图形验证码
-	valid, err := s.captcha.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
+	isValid, err := s.captcha.Verify(ctx, req.CaptchaID, req.CaptchaCode, true)
 	if err != nil {
 		slog.ErrorContext(ctx, "图形验证码读取失败", "error", err)
 		return apperr.NewBizError(503, "图形验证码服务不可用")
 	}
-	if !valid {
+	if !isValid {
 		return apperr.NewBizError(400, "图形验证码错误或已过期")
 	}
 
@@ -116,7 +116,7 @@ func (s *service) SendCode(ctx context.Context, clientIP string, req *request.Se
 
 func (s *service) VerifyCode(ctx context.Context, scene, phone, code string) (bool, error) {
 	// 验证码按场景隔离，且错误次数受限
-	valid, err := s.smsCache.ConsumeCode(ctx, scene, phone, code)
+	isValid, err := s.smsCache.ConsumeCode(ctx, scene, phone, code)
 	if errors.Is(err, cache.ErrSMSCodeAttemptsExceeded) {
 		return false, apperr.NewBizError(400, "短信验证码已连续输错 3 次")
 	}
@@ -126,5 +126,5 @@ func (s *service) VerifyCode(ctx context.Context, scene, phone, code string) (bo
 		return false, apperr.NewBizError(503, "短信服务不可用")
 	}
 
-	return valid, nil
+	return isValid, nil
 }

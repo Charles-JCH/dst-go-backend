@@ -18,9 +18,9 @@ type Repository interface {
 
 type UpdateFields struct {
 	Name         string
-	Description  string
+	Description  *string
 	MaxPlayers   int
-	Mods         []string
+	Mods         *[]string
 	Password     *string
 	ClusterToken *string
 }
@@ -61,19 +61,23 @@ func (r *repository) List(ctx context.Context, userID uint64, serverID uint64, p
 }
 
 func (r *repository) Update(ctx context.Context, userID uint64, dstID uint64, fields UpdateFields) error {
-	mods := fields.Mods
-	if mods == nil {
-		mods = []string{}
-	}
-	modsJSON, err := json.Marshal(mods)
-	if err != nil {
-		return err
-	}
 	updates := map[string]any{
 		"name":        fields.Name,
-		"description": fields.Description,
 		"max_players": fields.MaxPlayers,
-		"mods":        string(modsJSON),
+	}
+	if fields.Description != nil {
+		updates["description"] = *fields.Description
+	}
+	if fields.Mods != nil {
+		mods := *fields.Mods
+		if mods == nil {
+			mods = []string{}
+		}
+		modsJSON, err := json.Marshal(mods)
+		if err != nil {
+			return err
+		}
+		updates["mods"] = string(modsJSON)
 	}
 	if fields.Password != nil {
 		updates["password"] = *fields.Password

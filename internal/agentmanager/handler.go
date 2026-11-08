@@ -3,14 +3,13 @@ package agentmanager
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"game-panel/internal/handler"
 	"game-panel/internal/protocol"
 	"game-panel/internal/result"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -44,8 +43,8 @@ func NewHandler(hub *Hub, auth *Auth, service *Service) *Handler {
 func (h *Handler) ServeWS(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	token, err := parseBearerToken(c.GetHeader("Authorization"))
-	if err != nil {
+	token, ok := handler.BearerToken(c)
+	if !ok {
 		result.FailWithMsg(c, 401, "未授权")
 		return
 	}
@@ -129,23 +128,4 @@ func (h *Handler) readLoop(ctx context.Context, serverID uint64, conn *websocket
 			h.service.HandleResult(serverID, env.ID, res)
 		}
 	}
-}
-
-func parseBearerToken(authorization string) (string, error) {
-	authorization = strings.TrimSpace(authorization)
-	if authorization == "" {
-		return "", errors.New("authorization 为空")
-	}
-
-	const prefix = "Bearer "
-	if !strings.HasPrefix(authorization, prefix) {
-		return "", errors.New("authorization 格式错误")
-	}
-
-	token := strings.TrimSpace(strings.TrimPrefix(authorization, prefix))
-	if token == "" {
-		return "", errors.New("agent token 为空")
-	}
-
-	return token, nil
 }

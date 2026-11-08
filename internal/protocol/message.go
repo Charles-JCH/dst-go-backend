@@ -8,6 +8,8 @@ const (
 	TypeAck     = "ack"
 	TypeLog     = "log"
 	TypeResult  = "result"
+	// TypeUninstall 平台删除服务器时通知 Agent 卸载自己，不回传结果
+	TypeUninstall = "uninstall"
 
 	ActionDeploy = "deploy"
 	ActionInit   = "init"
@@ -35,14 +37,14 @@ type Log struct {
 }
 
 type Ack struct {
-	Accepted bool   `json:"accepted"`
-	Reason   string `json:"reason,omitempty"`
+	IsAccepted bool   `json:"accepted"`
+	Reason     string `json:"reason,omitempty"`
 }
 
 type Result struct {
-	Action   string `json:"action"`
-	Slot     int    `json:"slot,omitempty"`
-	Success  bool   `json:"success"`
-	ExitCode int    `json:"exitCode"`
-	Error    string `json:"error,omitempty"`
+	Action    string `json:"action"`
+	Slot      int    `json:"slot,omitempty"`
+	IsSuccess bool   `json:"success"`
+	ExitCode  int    `json:"exitCode"`
+	Error     string `json:"error,omitempty"`
 }

@@ -1,0 +1,56 @@
+# 推送到 main 后编译平台程序、Agent，连同 dst.sh 发布到平台服务器
+# 需要的 Secrets 见 deploy/README.md
+name: 发布后端
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一时间只跑一次发布，后提交的排队等待，不打断正在进行的发布
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: 代码检查
+        run: go vet ./...
+
+      - name: 编译
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+        run: |
+          mkdir -p out/agent
+          GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o out/game-panel ./cmd/server
+          for arch in amd64 arm64; do
+            GOARCH=$arch go build -trimpath -ldflags "-s -w" -o out/agent/dst-agent-linux-$arch ./cmd/agent
+          done
+          cp scripts/dst.sh out/dst.sh
+          tar -czf game-panel-backend.tar.gz -C out .
+
+      - name: 配置 SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: 上传并更新
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+        run: |
+          scp game-panel-backend.tar.gz deploy/update.sh "$TARGET:/tmp/"
+          ssh "$TARGET" bash /tmp/update.sh /tmp/game-panel-backend.tar.gz

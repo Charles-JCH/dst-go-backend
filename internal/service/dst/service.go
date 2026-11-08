@@ -9,8 +9,8 @@ import (
 	"game-panel/internal/model/response"
 	"game-panel/internal/platform/crypto"
 	"game-panel/internal/repository"
-	"game-panel/internal/repository/dst"
-	"game-panel/internal/repository/server"
+	dstrepo "game-panel/internal/repository/dst"
+	serverrepo "game-panel/internal/repository/server"
 	"log/slog"
 	"strings"
 )
@@ -32,18 +32,18 @@ type AgentCommander interface {
 }
 
 type service struct {
-	dstRepo    dst.Repository
-	serverRepo server.Repository
-	tx         repository.Transaction
+	dstRepo    dstrepo.Repository
+	serverRepo serverrepo.Repository
+	txManager  repository.Transaction
 	encryptor  crypto.Encryptor
 	agent      AgentCommander
 }
 
-func NewService(dstRepo dst.Repository, serverRepo server.Repository, tx repository.Transaction, encryptor crypto.Encryptor, agent AgentCommander) Service {
+func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, agent AgentCommander) Service {
 	return &service{
 		dstRepo:    dstRepo,
 		serverRepo: serverRepo,
-		tx:         tx,
+		txManager:  txManager,
 		encryptor:  encryptor,
 		agent:      agent,
 	}
@@ -87,7 +87,7 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 	}
 
 	// 先插入存档再复查服务器：与删除服务器的 NOT EXISTS 条件互斥，避免并发删除后留下孤儿存档
-	err = s.tx.ExecTx(ctx, func(txCtx context.Context) error {
+	err = s.txManager.ExecTx(ctx, func(txCtx context.Context) error {
 		if err := s.dstRepo.Create(txCtx, dst); err != nil {
 			return err
 		}
@@ -159,7 +159,7 @@ func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *
 		return apperr.NewBizError(400, "存档名称为空")
 	}
 
-	fields := dst.UpdateFields{
+	fields := dstrepo.UpdateFields{
 		Name:        name,
 		Description: req.Description,
 		MaxPlayers:  req.MaxPlayers,
@@ -189,12 +189,12 @@ func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *
 
 func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error {
 	// 先取出存档，删除后需要用它的服务器和槽位通知 Agent
-	d, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
 	if err != nil {
 		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
 		return apperr.NewBizError(500, "存档删除失败")
 	}
-	if d == nil {
+	if dst == nil {
 		return apperr.NewBizError(404, "存档不存在")
 	}
 
@@ -208,8 +208,8 @@ func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error
 	}
 
 	// 通知 Agent 清理服务器上的存档文件
-	if _, err := s.agent.Delete(d.ServerID, d.Slot); err != nil {
-		slog.WarnContext(ctx, "Agent 存档清理命令下发失败", "serverID", d.ServerID, "slot", d.Slot, "error", err)
+	if _, err := s.agent.Delete(dst.ServerID, dst.Slot); err != nil {
+		slog.WarnContext(ctx, "Agent 存档清理命令下发失败", "serverID", dst.ServerID, "slot", dst.Slot, "error", err)
 	}
 	return nil
 }

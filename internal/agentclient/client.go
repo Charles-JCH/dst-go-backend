@@ -16,15 +16,17 @@ import (
 type Client struct {
 	cfg      ServerConfig
 	identity IdentityConfig
+	service  ServiceConfig
 	executor *Executor
 	token    string
 	writeMu  sync.Mutex
 }
 
-func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, exec *Executor) *Client {
+func NewClient(serverCfg ServerConfig, identityCfg IdentityConfig, serviceCfg ServiceConfig, exec *Executor) *Client {
 	return &Client{
 		cfg:      serverCfg,
 		identity: identityCfg,
+		service:  serviceCfg,
 		executor: exec,
 	}
 }
@@ -68,7 +70,7 @@ func (c *Client) connectAndServe(ctx context.Context) error {
 	dialer := *websocket.DefaultDialer
 	dialer.HandshakeTimeout = c.cfg.ConnectTimeout
 
-	conn, resp, err := dialer.DialContext(ctx, c.cfg.WSUrl, header)
+	conn, resp, err := dialer.DialContext(ctx, c.cfg.WSURL, header)
 	if err != nil {
 		if resp != nil {
 			return fmt.Errorf("websocket 连接失败 status=%d: %w", resp.StatusCode, err)
@@ -106,60 +108,18 @@ func (c *Client) readLoop(ctx context.Context, conn *websocket.Conn) error {
 		case protocol.TypeCommand:
 			var payload protocol.CmdPayload
 			if err := json.Unmarshal(env.Payload, &payload); err != nil {
-				_ = c.sendAck(conn, env.ID, protocol.Ack{Accepted: false, Reason: "命令参数解析失败"})
+				_ = c.sendAck(conn, env.ID, protocol.Ack{IsAccepted: false, Reason: "命令参数解析失败"})
 				continue
 			}
 			go c.handleCommand(ctx, conn, env.ID, payload)
-		}
-	}
-}
-
-func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id string, payload protocol.CmdPayload) {
-	if err := c.sendAck(conn, id, protocol.Ack{Accepted: true}); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "命令确认发送失败 commandID=%s error=%v\n", id, err)
-		_ = conn.Close()
-	}
-
-	var reportOnce sync.Once
-	result := c.executor.Execute(ctx, payload, func(line string) {
-		if err := c.sendLog(conn, id, line); err != nil {
-			reportOnce.Do(func() {
-				_, _ = fmt.Fprintf(os.Stderr, "执行日志发送失败 commandID=%s error=%v\n", id, err)
-				_ = conn.Close()
-			})
-		}
-	})
-
-	if err := c.sendResult(conn, id, result); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "执行结果发送失败 commandID=%s success=%t exitCode=%d error=%v\n", id, result.Success, result.ExitCode, err)
-		_ = conn.Close()
-	}
-}
-
-func (c *Client) heartbeatLoop(ctx context.Context, conn *websocket.Conn) error {
-	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-			if err := c.send(conn, "", protocol.TypePing, nil); err != nil {
-				return fmt.Errorf("心跳发送失败: %w", err)
-			}
+		case protocol.TypeUninstall:
+			go Uninstall(ctx, c.service)
 		}
 	}
 }
 
 func (c *Client) sendAck(conn *websocket.Conn, id string, a protocol.Ack) error {
 	return c.send(conn, id, protocol.TypeAck, a)
-}
-func (c *Client) sendLog(conn *websocket.Conn, id string, line string) error {
-	return c.send(conn, id, protocol.TypeLog, protocol.Log{Content: line})
-}
-func (c *Client) sendResult(conn *websocket.Conn, id string, r *protocol.Result) error {
-	return c.send(conn, id, protocol.TypeResult, r)
 }
 
 func (c *Client) send(conn *websocket.Conn, id string, msgType string, payload any) error {
@@ -187,4 +147,50 @@ func (c *Client) send(conn *websocket.Conn, id string, msgType string, payload a
 	}
 
 	return nil
+}
+
+func (c *Client) handleCommand(ctx context.Context, conn *websocket.Conn, id string, payload protocol.CmdPayload) {
+	if err := c.sendAck(conn, id, protocol.Ack{IsAccepted: true}); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "命令确认发送失败 commandID=%s error=%v\n", id, err)
+		_ = conn.Close()
+	}
+
+	var reportOnce sync.Once
+	result := c.executor.Execute(ctx, payload, func(line string) {
+		if err := c.sendLog(conn, id, line); err != nil {
+			reportOnce.Do(func() {
+				_, _ = fmt.Fprintf(os.Stderr, "执行日志发送失败 commandID=%s error=%v\n", id, err)
+				_ = conn.Close()
+			})
+		}
+	})
+
+	if err := c.sendResult(conn, id, result); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "执行结果发送失败 commandID=%s success=%t exitCode=%d error=%v\n", id, result.IsSuccess, result.ExitCode, err)
+		_ = conn.Close()
+	}
+}
+
+func (c *Client) sendLog(conn *websocket.Conn, id string, line string) error {
+	return c.send(conn, id, protocol.TypeLog, protocol.Log{Content: line})
+}
+
+func (c *Client) sendResult(conn *websocket.Conn, id string, r *protocol.Result) error {
+	return c.send(conn, id, protocol.TypeResult, r)
+}
+
+func (c *Client) heartbeatLoop(ctx context.Context, conn *websocket.Conn) error {
+	ticker := time.NewTicker(c.cfg.HeartbeatInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			if err := c.send(conn, "", protocol.TypePing, nil); err != nil {
+				return fmt.Errorf("心跳发送失败: %w", err)
+			}
+		}
+	}
 }

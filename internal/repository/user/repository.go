@@ -15,8 +15,6 @@ type Repository interface {
 	GetByID(ctx context.Context, userID uint64) (*entity.User, error)
 	GetByUsername(ctx context.Context, username string) (*entity.User, error)
 	GetByPhone(ctx context.Context, phone string) (*entity.User, error)
-	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	Update(ctx context.Context, userID uint64, username string) error
 	UpdatePassword(ctx context.Context, userID uint64, passwordHash string, tokenVersion uint64) error
 }
 
@@ -46,33 +44,6 @@ func (r *repository) GetByUsername(ctx context.Context, username string) (*entit
 // GetByPhone 根据手机号查询
 func (r *repository) GetByPhone(ctx context.Context, phone string) (*entity.User, error) {
 	return repo.First[entity.User](r.getDB(ctx), "phone = ?", phone)
-}
-
-// GetByEmail 根据邮箱查询
-func (r *repository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
-	return repo.First[entity.User](r.getDB(ctx), "email = ?", email)
-}
-
-// Update 更新用户名
-func (r *repository) Update(ctx context.Context, userID uint64, username string) error {
-	result := r.getDB(ctx).
-		Model(&entity.User{}).
-		Where("id = ?", userID).
-		Update("username", username)
-	if result.Error != nil {
-		return repo.WrapError(result.Error)
-	}
-	if result.RowsAffected > 0 {
-		return nil
-	}
-	user, err := r.GetByID(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return repo.ErrNotFound
-	}
-	return nil
 }
 
 // UpdatePassword 更新用户密码并递增令牌版本

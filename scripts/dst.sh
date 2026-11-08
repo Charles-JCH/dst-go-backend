@@ -24,7 +24,8 @@ readonly STEAMCMD_TAR_URL="https://steamcdn-a.akamaihd.net/client/installer/stea
 readonly DST_KLEI_DIR="$HOME/.klei/DoNotStarveTogether"
 
 readonly GIT_REPO_URL="https://gitee.com/Charles-JCH/dst-archive.git"
-readonly DST_TOKEN="${DST_TOKEN:-pds-g^KU_XKeqpZXq^rtM08d2qtiy34ZRzi1P2wTLmrzTK3AcmnnMRePnXDjo=}"
+# 科雷令牌由平台在 init 时传入，不在脚本里写默认值
+readonly DST_TOKEN="${DST_TOKEN:-}"
 
 readonly DST_MASTER_PORT=10999
 readonly DST_CAVE_PORT=10998
@@ -527,6 +528,7 @@ init_cluster() {
     local token="${2:-$DST_TOKEN}"
 
     [[ "$slot" =~ ^[1-5]$ ]] || die "存档槽位只能是 1～5"
+    [[ -n "$token" ]] || die "缺少科雷令牌：请传入第二个参数或设置 DST_TOKEN"
     if is_running "master${slot}" || is_running "caves${slot}"; then
         die "Cluster_${slot} 正在运行，请先停止后再初始化"
     fi
@@ -807,8 +809,8 @@ show_menu() {
 main() {
     if [[ "$(whoami)" != "$CHARLES_USER" ]]; then
 
-        # 脚本更新检测
-        auto_update_script "$@"
+        # 脚本更新检测（由 Agent 调用时脚本版本由平台推送，跳过自更新）
+        [[ "${DST_NO_AUTO_UPDATE:-}" == "1" ]] || auto_update_script "$@"
 
         # 检查系统版本
         check_os_version

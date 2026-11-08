@@ -2,11 +2,11 @@ package logger
 
 import "context"
 
-type contextKey string
-
 const traceIDKey contextKey = "trace_id"
 
 const TraceHeaderKey = "X-Trace-ID"
+
+type contextKey string
 
 // WithTraceID 将 traceID 注入 Context
 func WithTraceID(ctx context.Context, traceID string) context.Context {

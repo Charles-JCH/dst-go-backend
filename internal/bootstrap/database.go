@@ -20,6 +20,7 @@ var entities = []any{
 	&entity.Server{},
 	&entity.Dst{},
 	&entity.Task{},
+	&entity.TaskLog{},
 }
 
 func InitSQLite(cfg config.SQLiteConfig) (*gorm.DB, error) {
