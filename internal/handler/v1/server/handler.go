@@ -66,7 +66,7 @@ func (h *Handler) List(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// Update 更新服务器
+// Update 修改服务器名称和 SSH 密码
 // [PUT] /api/v1/server/:id
 func (h *Handler) Update(c *gin.Context) {
 	serverID, ok := handler.PathID(c, "服务器ID")

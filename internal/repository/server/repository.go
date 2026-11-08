@@ -27,9 +27,6 @@ type Repository interface {
 
 type UpdateFields struct {
 	Name       string
-	IP         string
-	Port       int
-	Username   string
 	Password   *string
 	SSHHostKey *string
 }
@@ -77,12 +74,7 @@ func (r *repository) List(ctx context.Context, userID uint64, page int, pageSize
 }
 
 func (r *repository) Update(ctx context.Context, userID uint64, serverID uint64, fields UpdateFields) error {
-	updates := map[string]any{
-		"name":     fields.Name,
-		"ip":       fields.IP,
-		"port":     fields.Port,
-		"username": fields.Username,
-	}
+	updates := map[string]any{"name": fields.Name}
 	if fields.Password != nil {
 		updates["password"] = *fields.Password
 	}

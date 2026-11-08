@@ -148,49 +148,29 @@ func (s *service) List(ctx context.Context, userID uint64, req *request.ListServ
 	}, nil
 }
 
+// Update 只修改名称和 SSH 密码，不影响 Agent 连接；新密码在下次重新连接或更新 Agent 时使用
 func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return apperr.NewBizError(400, "服务器名称为空")
 	}
 
-	addr, err := netip.ParseAddr(req.IP)
-	if err != nil {
-		return apperr.NewBizError(400, "服务器IP无效")
-	}
-	ip := addr.Unmap().String()
-
-	current, err := s.serverRepo.GetByID(ctx, userID, serverID)
-	if err != nil {
-		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
-		return apperr.NewBizError(500, "服务器更新失败")
-	}
-	if current == nil {
-		return apperr.NewBizError(404, "服务器不存在")
-	}
-
-	fields := serverrepo.UpdateFields{Name: name, IP: ip, Port: req.Port, Username: req.Username}
-	// 密码为 nil 表示不修改
+	fields := serverrepo.UpdateFields{Name: name}
+	// 密码为 nil 表示不修改；重新填写密码时（如服务器改密码、重装系统）下次连接重新信任主机指纹
 	if req.Password != nil {
 		password, err := s.encryptor.Encrypt(*req.Password)
 		if err != nil {
 			slog.ErrorContext(ctx, "SSH密码加密失败", "userID", userID, "serverID", serverID, "error", err)
 			return apperr.NewBizError(500, "服务器更新失败")
 		}
-		fields.Password = &password
-	}
-	// 换了地址，或重新填写了密码（如服务器重装系统），下次连接重新信任主机指纹
-	if ip != current.IP || req.Port != current.Port || req.Password != nil {
 		empty := ""
+		fields.Password = &password
 		fields.SSHHostKey = &empty
 	}
 
-	err = s.serverRepo.Update(ctx, userID, serverID, fields)
+	err := s.serverRepo.Update(ctx, userID, serverID, fields)
 	if errors.Is(err, repository.ErrNotFound) {
 		return apperr.NewBizError(404, "服务器不存在")
-	}
-	if errors.Is(err, repository.ErrDuplicate) {
-		return apperr.NewBizError(409, "该IP和SSH端口的服务器已存在")
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "服务器更新失败", "userID", userID, "serverID", serverID, "error", err)
