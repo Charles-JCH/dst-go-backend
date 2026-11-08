@@ -52,6 +52,12 @@ warn()  { printf "${C_YELLOW}[%s] [WARN]${C_RESET} %s\n" "$(date '+%F %T')" "$*"
 error() { printf "${C_RED}[%s] [ERROR]${C_RESET} %s\n" "$(date '+%F %T')" "$*" >&2; }
 die()   { error "$*"; exit 1; }
 
+# 安装软件包统一走这里：
+# - NEEDRESTART_SUSPEND：装完包后 needrestart 会重启用到新库的服务，其中包括 dst-agent，
+#   会中断平台正在下发的部署命令，所以安装期间暂停它
+# - DEBIAN_FRONTEND：不弹出交互式配置窗口
+apt_get() { sudo NEEDRESTART_SUSPEND=1 DEBIAN_FRONTEND=noninteractive apt-get "$@"; }
+
 # ============================================================
 # 脚本自更新
 # ============================================================
@@ -249,9 +255,9 @@ install_steamcmd() {
 
     if ! dpkg -s lib32gcc-s1 &>/dev/null; then
         info "检测到系统缺失 32 位支持，正在安装 SteamCMD 必备依赖..."
-        sudo apt-get install -y lib32gcc-s1 || {
-            sudo apt-get update
-            sudo apt-get install -y lib32gcc-s1 || warn "依赖库安装失败，SteamCMD 启动可能会报错！"
+        apt_get install -y lib32gcc-s1 || {
+            apt_get update
+            apt_get install -y lib32gcc-s1 || warn "依赖库安装失败，SteamCMD 启动可能会报错！"
         }
     fi
 
@@ -381,20 +387,23 @@ install_env() {
 
     # ── 1/3 系统依赖 ──────────────────────────────────────────
     info "[1/3] 安装系统依赖..."
-    sudo mkdir -p /etc/needrestart
-    sudo tee /etc/needrestart/needrestart.conf >/dev/null <<'EOF'
+    # needrestart 改为自动重启、不弹窗，但永远不自动重启 dst-agent（系统自动更新时也一样）。
+    # 写到 conf.d 片段里，不覆盖系统自带的 needrestart.conf，保留它默认不重启的服务列表
+    sudo mkdir -p /etc/needrestart/conf.d
+    sudo tee /etc/needrestart/conf.d/dst.conf >/dev/null <<'EOF'
 $nrconf{restart} = 'a';
 $nrconf{kernelhints} = -1;
 $nrconf{verbosity} = 0;
+$nrconf{override_rc}{qr(^dst-agent\.service$)} = 0;
 EOF
 
-    command -v add-apt-repository &>/dev/null || sudo apt-get install -y software-properties-common
+    command -v add-apt-repository &>/dev/null || apt_get install -y software-properties-common
     sudo add-apt-repository multiverse -y
     sudo dpkg --add-architecture i386
-    sudo apt-get update || true
+    apt_get update || true
 
     # 如果失败将 libgcc-s1:i386 替换 libgcc1:i386
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    apt_get install -y --no-install-recommends \
         libstdc++6:i386 \
         libgcc-s1:i386 \
         libcurl4-gnutls-dev:i386 \
@@ -654,7 +663,7 @@ stop_server() {
 update_server() {
     if ! command -v jq &>/dev/null; then
         warn "未检测到 jq，正在安装..."
-        sudo apt-get install -y jq || die "jq 安装失败，无法解析版本信息"
+        apt_get install -y jq || die "jq 安装失败，无法解析版本信息"
     fi
 
     info "正在检查 DST 服务端是否有新版本..."
