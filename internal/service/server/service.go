@@ -29,6 +29,7 @@ type Service interface {
 // AgentConn 查询、卸载和断开 Agent（agentmanager.Service 未导出接口）
 type AgentConn interface {
 	IsOnline(serverID uint64) bool
+	HasPendingCommand(serverID uint64) bool
 	Uninstall(serverID uint64) error
 	Disconnect(serverID uint64)
 }
@@ -226,7 +227,7 @@ func (s *service) Delete(ctx context.Context, userID uint64, serverID uint64) er
 	return nil
 }
 
-// InstallAgent 重新安装 Agent（安装失败后重试）；已有进行中的安装任务时返回 409
+// InstallAgent 重新安装 Agent：离线时用于重新连接，在线时用于更新到平台当前版本；已有进行中的安装任务时返回 409
 func (s *service) InstallAgent(ctx context.Context, userID uint64, serverID uint64) (*response.TaskResp, error) {
 	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
 	if err != nil {
@@ -236,8 +237,15 @@ func (s *service) InstallAgent(ctx context.Context, userID uint64, serverID uint
 	if server == nil {
 		return nil, apperr.NewBizError(404, "服务器不存在")
 	}
+	// 安装会重启 Agent，正在执行的命令（如部署游戏）会丢失结果
+	if s.agent.HasPendingCommand(serverID) {
+		return nil, apperr.NewBizError(409, "Agent 正在执行命令，请等命令结束后再更新")
+	}
 
 	installTask := newInstallTask(userID, serverID)
+	if s.agent.IsOnline(serverID) {
+		installTask.Name = "更新 Agent"
+	}
 	err = s.taskRepo.Create(ctx, installTask)
 	if errors.Is(err, repository.ErrDuplicate) {
 		return nil, apperr.NewBizError(409, "Agent 安装任务正在进行中")

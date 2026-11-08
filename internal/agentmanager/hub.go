@@ -121,6 +121,20 @@ func (h *Hub) IsOnline(serverID uint64) bool {
 	return ok
 }
 
+// HasPending Agent 是否有已下发、还没回传结果的命令
+func (h *Hub) HasPending(serverID uint64) bool {
+	h.mu.RLock()
+	agent := h.conns[serverID]
+	h.mu.RUnlock()
+
+	if agent == nil {
+		return false
+	}
+	agent.mu.Lock()
+	defer agent.mu.Unlock()
+	return len(agent.pending) > 0
+}
+
 func (h *Hub) Count() int {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

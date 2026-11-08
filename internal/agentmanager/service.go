@@ -77,6 +77,11 @@ func (s *Service) IsOnline(serverID uint64) bool {
 	return s.hub.IsOnline(serverID)
 }
 
+// HasPendingCommand Agent 是否正在执行平台下发的命令；更新 Agent 会中断命令，需先等它结束
+func (s *Service) HasPendingCommand(serverID uint64) bool {
+	return s.hub.HasPending(serverID)
+}
+
 func (s *Service) OnlineCount() int {
 	return s.hub.Count()
 }
