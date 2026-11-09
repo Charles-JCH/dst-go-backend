@@ -29,7 +29,7 @@ type Service interface {
 	Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateServerReq) error
 	Delete(ctx context.Context, userID uint64, serverID uint64) error
 	InstallAgent(ctx context.Context, userID uint64, serverID uint64) (*response.TaskResp, error)
-	// ListMetrics 最近 24 小时的资源使用情况，按时间升序
+	// ListMetrics 最近 1 小时的资源使用情况，按时间升序
 	ListMetrics(ctx context.Context, userID uint64, serverID uint64) (*response.MetricsListResp, error)
 }
 

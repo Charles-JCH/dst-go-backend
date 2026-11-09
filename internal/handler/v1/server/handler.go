@@ -120,7 +120,7 @@ func (h *Handler) InstallAgent(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// ListMetrics 最近 24 小时的资源使用情况
+// ListMetrics 最近 1 小时的资源使用情况
 // [GET] /api/v1/server/:id/metrics
 func (h *Handler) ListMetrics(c *gin.Context) {
 	serverID, ok := handler.PathID(c, "服务器ID")

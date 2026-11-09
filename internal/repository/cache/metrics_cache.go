@@ -14,7 +14,7 @@ const (
 	// serverMetricsPrefix 每台服务器一个有序集合，score 为采样时间（毫秒），member 为 JSON
 	serverMetricsPrefix = "server_metrics:"
 	// MetricsRetention 资源使用情况保留时长，更早的采样点写入时删除
-	MetricsRetention = 24 * time.Hour
+	MetricsRetention = time.Hour
 )
 
 type MetricsCache interface {
