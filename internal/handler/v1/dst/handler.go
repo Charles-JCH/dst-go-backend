@@ -16,7 +16,24 @@ func NewHandler(dstService dst.Service) *Handler {
 	return &Handler{dstService: dstService}
 }
 
-// Create 创建存档
+// Init 新增存档第一步：初始化默认存档，返回初始化任务
+// [POST] /api/v1/dst/init
+func (h *Handler) Init(c *gin.Context) {
+	var req request.InitDstReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		result.FailWithMsg(c, 400, "请求参数无效")
+		return
+	}
+
+	resp, err := h.dstService.Init(c.Request.Context(), c.GetUint64("userID"), &req)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
+// Create 新增存档第二步：写入配置文件，返回创建任务；任务成功后存档才保存
 // [POST] /api/v1/dst
 func (h *Handler) Create(c *gin.Context) {
 	var req request.CreateDstReq
@@ -50,7 +67,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 }
 
 // List 分页查询
-// [GET] /api/v1/dst?serverID=1&page=1&pageSize=20
+// [GET] /api/v1/dst?serverID=1&page=1&pageSize=20（serverID 可不传，查询全部服务器）
 func (h *Handler) List(c *gin.Context) {
 	var req request.ListDstReq
 	if err := c.ShouldBindQuery(&req); err != nil {

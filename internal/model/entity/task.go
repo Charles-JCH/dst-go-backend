@@ -9,6 +9,8 @@ const (
 	TaskTypeAgentInstall = "agent_install"
 	TaskTypeGameDeploy   = "game_deploy" // 通过 Agent 部署游戏环境
 	TaskTypeDstDelete    = "dst_delete"  // 通过 Agent 清理存档文件
+	TaskTypeDstInit      = "dst_init"    // 新增存档第一步：通过 Agent 拉取默认存档
+	TaskTypeDstCreate    = "dst_create"  // 新增存档第二步：写入配置文件，成功后保存存档
 
 	TaskResourceServer = "server"
 	TaskResourceDst    = "dst"

@@ -137,7 +137,7 @@ func Run(configPath string) error {
 		realtimeHub,
 	)
 	serverService := serverservice.NewService(serverRepo, taskRepo, metricsCache, txManager, encryptor, agentInstaller, agentService)
-	dstService := dstservice.NewService(dstRepo, serverRepo, txManager, encryptor, agentCommands)
+	dstService := dstservice.NewService(dstRepo, serverRepo, taskRepo, txManager, encryptor, agentCommands)
 	taskService := taskservice.NewService(taskRepo)
 	deployService := gamedeployservice.NewService(serverRepo, gameEnvRepo, agentCommands)
 

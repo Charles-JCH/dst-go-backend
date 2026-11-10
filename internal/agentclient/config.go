@@ -25,6 +25,12 @@ type ServerConfig struct {
 type ExecutorConfig struct {
 	ScriptPath  string        `mapstructure:"script_path"`
 	ExecTimeout time.Duration `mapstructure:"exec_timeout"`
+	// GameUser 运行游戏的用户，写入的配置文件归它所有；与 dst.sh 的 CHARLES_USER 一致
+	GameUser string `mapstructure:"game_user"`
+	// ClusterRoot 存档根目录，存档在其下的 Cluster_<槽位> 目录；与 dst.sh 的 DST_KLEI_DIR 一致
+	ClusterRoot string `mapstructure:"cluster_root"`
+	// ModsDir 游戏服务端的模组目录；与 dst.sh 的 DST_ROOT/mods 一致
+	ModsDir string `mapstructure:"mods_dir"`
 }
 
 type IdentityConfig struct {
@@ -55,6 +61,10 @@ func Load(configPath string) (*Config, error) {
 
 	// 旧版本安装的配置没有 sysinfo，按根分区统计
 	v.SetDefault("sysinfo.disk_path", "/")
+	// 游戏目录由 dst.sh 固定，旧版本安装的配置没有这几项
+	v.SetDefault("executor.game_user", "charles")
+	v.SetDefault("executor.cluster_root", "/home/charles/.klei/DoNotStarveTogether")
+	v.SetDefault("executor.mods_dir", "/home/charles/dst/mods")
 
 	// 读取配置文件
 	if err := v.ReadInConfig(); err != nil {

@@ -531,7 +531,7 @@ configure_cluster_ports() {
 # 初始化 / 启动 / 停止 / 更新 / 删除 / 查看运行状态
 # ============================================================
 
-# 初始化存档
+# 初始化存档：清空 Cluster_<槽位> 后重新拉取默认存档，并配置端口和令牌
 init_cluster() {
     local slot="${1:-1}"
     local token="${2:-$DST_TOKEN}"
@@ -543,20 +543,23 @@ init_cluster() {
     fi
     local cluster_dir="$DST_KLEI_DIR/Cluster_${slot}"
 
-    if [[ ! -d "$cluster_dir" ]]; then
-        info "存档 Cluster_${slot} 不存在，正在拉取默认存档..."
-        mkdir -p "$DST_KLEI_DIR"
-
-        if ! git clone --depth 1 "$GIT_REPO_URL" "$cluster_dir"; then
-            error "拉取默认存档失败！请检查服务器网络能否访问 $GIT_REPO_URL"
-            rm -rf "$cluster_dir"
-            exit 1
-        fi
-
-        rm -rf "$cluster_dir/.git"
-        rm -rf "$cluster_dir/Master/save"
-        rm -rf "$cluster_dir/Caves/save"
+    if [[ -d "$cluster_dir" ]]; then
+        warn "清理已有存档 Cluster_${slot}..."
+        rm -rf "$cluster_dir"
+        rm -f "$HOME/cluster${slot}.log"
     fi
+
+    info "正在拉取默认存档..."
+    mkdir -p "$DST_KLEI_DIR"
+    if ! git clone --depth 1 "$GIT_REPO_URL" "$cluster_dir"; then
+        error "拉取默认存档失败！请检查服务器网络能否访问 $GIT_REPO_URL"
+        rm -rf "$cluster_dir"
+        exit 1
+    fi
+
+    rm -rf "$cluster_dir/.git"
+    rm -rf "$cluster_dir/Master/save"
+    rm -rf "$cluster_dir/Caves/save"
 
     configure_cluster_ports "$slot"
 
@@ -799,7 +802,15 @@ show_menu() {
     read -rp "请选择[1-7]: " choice
 
     case "$choice" in
-        1) init_cluster  ;;
+        1)
+            # 初始化会清空已有存档，交互模式下先确认
+            if [[ -d "$DST_KLEI_DIR/Cluster_1" ]]; then
+                read -rp "初始化会清空已有存档 Cluster_1，是否继续？[y/N] " confirm
+                [[ "$confirm" =~ ^[Yy]$ ]] && init_cluster
+            else
+                init_cluster
+            fi
+            ;;
         2) start_server  ;;
         3) stop_server   ;;
         4) check_status || true ;;

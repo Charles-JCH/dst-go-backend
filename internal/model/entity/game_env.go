@@ -1,5 +1,8 @@
 package entity
 
+// GameCodeDst 饥荒联机版的游戏编码
+const GameCodeDst = "dst"
+
 type GameEnv struct {
 	BaseModel
 	Code string `gorm:"type:varchar(32);not null;uniqueIndex;comment:游戏编码" json:"code"`

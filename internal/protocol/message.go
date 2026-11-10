@@ -21,6 +21,16 @@ const (
 	ActionUpdate = "update"
 	ActionDelete = "delete"
 	ActionStatus = "status"
+	// ActionConfig 写入存档配置文件，由 Agent 直接写入，不经过 dst 脚本
+	ActionConfig = "config"
+
+	// 平台可以写入的配置文件名：Agent 按名称换算成固定路径，平台不能指定路径
+	FileClusterINI         = "cluster.ini"
+	FileClusterToken       = "cluster_token.txt"
+	FileMasterModOverrides = "Master/modoverrides.lua"
+	FileCavesModOverrides  = "Caves/modoverrides.lua"
+	// FileModsSetup 服务器上所有存档共用的模组下载列表
+	FileModsSetup = "dedicated_server_mods_setup.lua"
 )
 
 type Envelope struct {
@@ -30,9 +40,18 @@ type Envelope struct {
 }
 
 type CmdPayload struct {
-	Action       string `json:"action"`
-	Slot         int    `json:"slot,omitempty"`
+	Action string `json:"action"`
+	Slot   int    `json:"slot,omitempty"`
+	// ClusterToken init 时使用，Agent 通过环境变量传给 dst 脚本
 	ClusterToken string `json:"clusterToken,omitempty"`
+	// Files config 时写入的配置文件
+	Files []ConfigFile `json:"files,omitempty"`
+}
+
+// ConfigFile 一个配置文件；Name 只能是 File 开头的常量之一
+type ConfigFile struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
 }
 
 type Log struct {

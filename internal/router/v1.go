@@ -40,6 +40,7 @@ func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc
 
 		dstGroup := protected.Group("/dst")
 		{
+			dstGroup.POST("/init", h.Dst.Init)
 			dstGroup.POST("", h.Dst.Create)
 			dstGroup.GET("", h.Dst.List)
 			dstGroup.GET("/:id", h.Dst.GetByID)

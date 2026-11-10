@@ -6,12 +6,14 @@ import (
 )
 
 type DstResp struct {
-	ID          uint64    `json:"id"`
-	ServerID    uint64    `json:"serverID"`
-	Slot        int       `json:"slot"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	MaxPlayers  int       `json:"maxPlayers"`
+	ID          uint64 `json:"id"`
+	ServerID    uint64 `json:"serverID"`
+	Slot        int    `json:"slot"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	MaxPlayers  int    `json:"maxPlayers"`
+	// HasPassword 是否设置了房间密码，密码本身不返回
+	HasPassword bool      `json:"hasPassword"`
 	Status      int       `json:"status"`
 	Mods        []string  `json:"mods"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -38,6 +40,7 @@ func ToDstResp(dst *entity.Dst) *DstResp {
 		Name:        dst.Name,
 		Description: dst.Description,
 		MaxPlayers:  dst.MaxPlayers,
+		HasPassword: dst.Password != "",
 		Status:      dst.Status,
 		Mods:        mods,
 		CreatedAt:   dst.CreatedAt,

@@ -89,7 +89,7 @@ func migrate(db *gorm.DB) error {
 // seedGameEnv 写入系统支持部署的游戏环境
 func seedGameEnv(db *gorm.DB) error {
 	envs := []entity.GameEnv{
-		{Code: "dst", Name: "饥荒联机版"},
+		{Code: entity.GameCodeDst, Name: "饥荒联机版"},
 	}
 	return db.Clauses(clause.OnConflict{DoNothing: true}).Create(&envs).Error
 }

@@ -20,7 +20,7 @@ const paramGameCode = "gameCode"
 
 // deployActions 游戏编码对应的 Agent 部署命令；新增游戏时在这里加一行
 var deployActions = map[string]string{
-	"dst": protocol.ActionDeploy,
+	entity.GameCodeDst: protocol.ActionDeploy,
 }
 
 // Service 通过 Agent 在服务器上部署游戏环境

@@ -41,20 +41,30 @@ func (e *Executor) Execute(ctx context.Context, payload protocol.CmdPayload, onL
 		return &protocol.Result{Action: payload.Action, Slot: payload.Slot, ExitCode: -1, Error: msg}
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, e.cfg.ExecTimeout)
+	defer cancel()
+
+	if payload.Action == protocol.ActionConfig {
+		if err := e.writeConfig(ctx, payload, onLog); err != nil {
+			return failed(err.Error())
+		}
+		return &protocol.Result{Action: payload.Action, Slot: payload.Slot, IsSuccess: true}
+	}
+
 	args, err := e.buildArgs(payload)
 	if err != nil {
 		return failed(err.Error())
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, e.cfg.ExecTimeout)
-	defer cancel()
-
 	// stdout 和 stderr 合并到同一个管道，日志行的先后顺序与脚本输出一致
 	pr, pw := io.Pipe()
 	cmd := exec.CommandContext(ctx, e.cfg.ScriptPath, args...)
 	cmd.Stdout, cmd.Stderr = pw, pw
-	// 脚本版本由平台统一推送，关闭脚本自更新
+	// 脚本版本由平台统一推送，关闭脚本自更新；科雷令牌走环境变量，不出现在进程参数里
 	cmd.Env = append(os.Environ(), "DST_NO_AUTO_UPDATE=1")
+	if payload.Action == protocol.ActionInit {
+		cmd.Env = append(cmd.Env, "DST_TOKEN="+payload.ClusterToken)
+	}
 	killWithChildren(cmd) // 超时时连同子进程一起结束
 	cmd.WaitDelay = 5 * time.Second
 
@@ -99,11 +109,7 @@ func (e *Executor) buildArgs(payload protocol.CmdPayload) ([]string, error) {
 	case protocol.ActionDeploy, protocol.ActionUpdate:
 		return []string{payload.Action}, nil
 	case protocol.ActionInit, protocol.ActionStart, protocol.ActionStop, protocol.ActionDelete, protocol.ActionStatus:
-		args := []string{payload.Action, strconv.Itoa(payload.Slot)}
-		if payload.Action == protocol.ActionInit {
-			args = append(args, payload.ClusterToken)
-		}
-		return args, nil
+		return []string{payload.Action, strconv.Itoa(payload.Slot)}, nil
 	default:
 		return nil, fmt.Errorf("不支持操作 action=%s", payload.Action)
 	}
