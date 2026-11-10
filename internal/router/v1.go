@@ -48,6 +48,7 @@ func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc
 			dstGroup.DELETE("/:id", h.Dst.Delete)
 			dstGroup.POST("/:id/start", h.Dst.Start)
 			dstGroup.POST("/:id/stop", h.Dst.Stop)
+			dstGroup.POST("/:id/status", h.Dst.Status)
 		}
 
 		taskGroup := protected.Group("/tasks")

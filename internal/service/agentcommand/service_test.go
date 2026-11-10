@@ -66,7 +66,7 @@ func TestDispatchSucceeded(t *testing.T) {
 	ctx := context.Background()
 
 	var handled *entity.Task
-	s.OnSucceeded(entity.TaskTypeGameDeploy, func(_ context.Context, task *entity.Task) error {
+	s.OnSucceeded(entity.TaskTypeGameDeploy, func(_ context.Context, task *entity.Task, _ protocol.Result) error {
 		handled = task
 		return nil
 	})
@@ -158,7 +158,7 @@ func TestDispatchFailures(t *testing.T) {
 
 	t.Run("成功处理出错时任务失败", func(t *testing.T) {
 		s, _, repo := newTestService(t)
-		s.OnSucceeded(entity.TaskTypeGameDeploy, func(context.Context, *entity.Task) error { return errors.New("写库失败") })
+		s.OnSucceeded(entity.TaskTypeGameDeploy, func(context.Context, *entity.Task, protocol.Result) error { return errors.New("写库失败") })
 		task, _ := s.Dispatch(ctx, deployCmd())
 		s.OnResult(7, task.CommandID, protocol.Result{IsSuccess: true})
 		got, _ := repo.FindByID(ctx, task.ID)

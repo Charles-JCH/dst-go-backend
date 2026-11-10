@@ -34,3 +34,8 @@ type ListDstReq struct {
 	Page     int    `form:"page,default=1" binding:"min=1,max=1000000"`
 	PageSize int    `form:"pageSize,default=20" binding:"min=1,max=100"`
 }
+
+// DeleteDstReq recordOnly 为 true 时只删除平台记录，不清理服务器上的存档文件
+type DeleteDstReq struct {
+	IsRecordOnly bool `form:"recordOnly"`
+}

@@ -48,8 +48,9 @@ type Command struct {
 	Payload      protocol.CmdPayload
 }
 
-// SucceededHandler 命令执行成功后的业务处理，返回的错误会让任务标记为失败
-type SucceededHandler func(ctx context.Context, task *entity.Task) error
+// SucceededHandler 命令执行成功后的业务处理，result 为 Agent 回传的结果（如查看状态的退出码）；
+// 返回的错误会让任务标记为失败
+type SucceededHandler func(ctx context.Context, task *entity.Task, result protocol.Result) error
 
 // AgentSender 查询 Agent 在线状态并下发命令（agentmanager.Service 未导出接口）
 type AgentSender interface {
@@ -209,7 +210,7 @@ func (s *service) OnResult(serverID uint64, commandID string, result protocol.Re
 	}
 
 	status, message := entity.TaskStatusSucceeded, ""
-	if err := s.handleSucceeded(ctx, commandID); err != nil {
+	if err := s.handleSucceeded(ctx, commandID, result); err != nil {
 		slog.ErrorContext(ctx, "命令执行成功后的处理失败", "commandID", commandID, "error", err)
 		status, message = entity.TaskStatusFailed, "执行成功，但结果保存失败，请重试"
 	}
@@ -280,7 +281,7 @@ func (s *service) lookup(ctx context.Context, commandID string) (runningTask, bo
 }
 
 // handleSucceeded 执行该类任务注册的成功处理，没有注册时直接成功
-func (s *service) handleSucceeded(ctx context.Context, commandID string) error {
+func (s *service) handleSucceeded(ctx context.Context, commandID string, result protocol.Result) error {
 	t, ok := s.lookup(ctx, commandID)
 	if !ok {
 		return nil
@@ -296,5 +297,5 @@ func (s *service) handleSucceeded(ctx context.Context, commandID string) error {
 	if task == nil {
 		return nil
 	}
-	return handler(ctx, task)
+	return handler(ctx, task, result)
 }

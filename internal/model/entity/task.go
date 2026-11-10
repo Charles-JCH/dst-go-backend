@@ -8,12 +8,13 @@ import (
 const (
 	TaskTypeAgentInstall = "agent_install"
 	TaskTypeGameDeploy   = "game_deploy" // 通过 Agent 部署游戏环境
-	TaskTypeDstDelete    = "dst_delete"  // 通过 Agent 清理存档文件
+	TaskTypeDstDelete    = "dst_delete"  // 删除存档：通过 Agent 清理存档文件，成功后删除记录
 	TaskTypeDstInit      = "dst_init"    // 新增存档第一步：通过 Agent 拉取默认存档
 	TaskTypeDstCreate    = "dst_create"  // 新增存档第二步：写入配置文件，成功后保存存档
 	TaskTypeDstUpdate    = "dst_update"  // 编辑存档：写入配置文件，成功后更新存档
 	TaskTypeDstStart     = "dst_start"   // 启动存档，成功后标记为运行中
 	TaskTypeDstStop      = "dst_stop"    // 停止存档，成功后标记为已停止
+	TaskTypeDstStatus    = "dst_status"  // 查看存档运行状态，成功后按实际状态更新
 
 	TaskResourceServer = "server"
 	TaskResourceDst    = "dst"

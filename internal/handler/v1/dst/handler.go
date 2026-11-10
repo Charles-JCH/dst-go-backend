@@ -137,17 +137,40 @@ func (h *Handler) Stop(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// Delete 删除存档
-// [DELETE] /api/v1/dst/:id
+// Status 查看存档运行状态，返回任务；任务成功后存档状态按实际更新
+// [POST] /api/v1/dst/:id/status
+func (h *Handler) Status(c *gin.Context) {
+	dstID, ok := handler.PathID(c, "存档ID")
+	if !ok {
+		return
+	}
+
+	resp, err := h.dstService.Status(c.Request.Context(), c.GetUint64("userID"), dstID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
+// Delete 删除存档：返回删除任务，清理成功后记录才删除；recordOnly=true 时只删除记录，data 为 null
+// [DELETE] /api/v1/dst/:id?recordOnly=false
 func (h *Handler) Delete(c *gin.Context) {
 	dstID, ok := handler.PathID(c, "存档ID")
 	if !ok {
 		return
 	}
 
-	if err := h.dstService.Delete(c.Request.Context(), c.GetUint64("userID"), dstID); err != nil {
+	var req request.DeleteDstReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		result.FailWithMsg(c, 400, "查询参数无效")
+		return
+	}
+
+	resp, err := h.dstService.Delete(c.Request.Context(), c.GetUint64("userID"), dstID, &req)
+	if err != nil {
 		result.Fail(c, err)
 		return
 	}
-	result.Success(c, nil)
+	result.Success(c, resp)
 }

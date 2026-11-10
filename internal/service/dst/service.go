@@ -29,6 +29,9 @@ const (
 	// 初始化任务参数：槽位和科雷令牌密文，第二步据此创建存档
 	paramSlot         = "slot"
 	paramClusterToken = "clusterToken"
+	// exitCodeRunning dst.sh status 的退出码：0 为运行中，2 为已停止（两者都算执行成功）
+	exitCodeRunning = 0
+
 	// paramDst 创建任务参数：待保存的存档（pendingDst 的 JSON），配置写入成功后保存
 	paramDst = "dst"
 )
@@ -51,7 +54,11 @@ type Service interface {
 	Start(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
 	// Stop 下发停止任务，返回任务；成功后存档标记为已停止。存档未运行时脚本直接成功
 	Stop(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
-	Delete(ctx context.Context, userID uint64, dstID uint64) error
+	// Status 下发查看状态任务，返回任务；成功后按服务器上的实际状态更新存档
+	Status(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
+	// Delete 默认下发删除任务并返回任务，服务器上的存档清理成功后才删除记录；
+	// IsRecordOnly 只删除平台记录（Agent 长期离线、服务器已不可用时使用），不返回任务
+	Delete(ctx context.Context, userID uint64, dstID uint64, req *request.DeleteDstReq) (*response.TaskResp, error)
 }
 
 // pendingDst 待保存的存档，作为创建任务的参数；ClusterToken 为密文
@@ -75,7 +82,7 @@ type service struct {
 	commands   agentcommand.Service
 }
 
-// NewService 同时向 commands 注册创建、更新任务成功后的处理
+// NewService 同时向 commands 注册各类存档任务成功后的处理
 func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, taskRepo taskrepo.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, commands agentcommand.Service) Service {
 	s := &service{
 		dstRepo:    dstRepo,
@@ -89,6 +96,8 @@ func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, ta
 	commands.OnSucceeded(entity.TaskTypeDstUpdate, s.onUpdated)
 	commands.OnSucceeded(entity.TaskTypeDstStart, s.statusUpdater(entity.DstStatusRunning))
 	commands.OnSucceeded(entity.TaskTypeDstStop, s.statusUpdater(entity.DstStatusStopped))
+	commands.OnSucceeded(entity.TaskTypeDstStatus, s.onStatusChecked)
+	commands.OnSucceeded(entity.TaskTypeDstDelete, s.onDeleted)
 	return s
 }
 
@@ -302,40 +311,26 @@ func (s *service) Stop(ctx context.Context, userID uint64, dstID uint64) (*respo
 	return s.dispatchControl(ctx, userID, dstID, protocol.ActionStop, entity.TaskTypeDstStop, "停止存档")
 }
 
-func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error {
-	// 先取出存档，删除后需要用它的服务器和槽位通知 Agent
-	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
-	if err != nil {
-		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
-		return apperr.NewBizError(500, "存档删除失败")
-	}
-	if dst == nil {
-		return apperr.NewBizError(404, "存档不存在")
+func (s *service) Status(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error) {
+	return s.dispatchControl(ctx, userID, dstID, protocol.ActionStatus, entity.TaskTypeDstStatus, "查看存档状态")
+}
+
+func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64, req *request.DeleteDstReq) (*response.TaskResp, error) {
+	if !req.IsRecordOnly {
+		// 清理成功后才删除记录；dst.sh delete 会先停止运行中的存档
+		return s.dispatchControl(ctx, userID, dstID, protocol.ActionDelete, entity.TaskTypeDstDelete, "删除存档")
 	}
 
-	err = s.dstRepo.Delete(ctx, userID, dstID)
+	err := s.dstRepo.Delete(ctx, userID, dstID)
 	if errors.Is(err, repository.ErrNotFound) {
-		return apperr.NewBizError(404, "存档不存在")
+		return nil, apperr.NewBizError(404, "存档不存在")
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "存档删除失败", "userID", userID, "dstID", dstID, "error", err)
-		return apperr.NewBizError(500, "存档删除失败")
+		return nil, apperr.NewBizError(500, "存档删除失败")
 	}
-
-	// 通知 Agent 清理服务器上的存档文件，结果在任务中查看；Agent 离线或正忙时只删除记录，文件需手动清理
-	_, err = s.commands.Dispatch(ctx, agentcommand.Command{
-		UserID:       userID,
-		ServerID:     dst.ServerID,
-		TaskType:     entity.TaskTypeDstDelete,
-		TaskName:     fmt.Sprintf("清理存档文件（槽位 %d）", dst.Slot),
-		ResourceType: entity.TaskResourceDst,
-		ResourceID:   dstID,
-		Payload:      protocol.CmdPayload{Action: protocol.ActionDelete, Slot: dst.Slot},
-	})
-	if err != nil {
-		slog.WarnContext(ctx, "存档清理命令下发失败", "serverID", dst.ServerID, "slot", dst.Slot, "error", err)
-	}
-	return nil
+	slog.InfoContext(ctx, "存档记录已删除，服务器上的文件未清理", "userID", userID, "dstID", dstID)
+	return nil, nil
 }
 
 // dispatchControl 下发启动、停止这类只需槽位的命令，任务名形如"启动存档「名称」"
@@ -419,7 +414,7 @@ func (s *service) dispatchConfig(ctx context.Context, userID uint64, cmd agentco
 
 // onCreated 配置写入成功后保存存档。先插入存档再复查服务器：与删除服务器的 NOT EXISTS 条件互斥，
 // 避免并发删除服务器后留下孤儿存档。同一服务器的命令串行执行且下发前已校验槽位，正常不会重复插入
-func (s *service) onCreated(ctx context.Context, task *entity.Task) error {
+func (s *service) onCreated(ctx context.Context, task *entity.Task, _ protocol.Result) error {
 	var pending pendingDst
 	if err := json.Unmarshal([]byte(task.Params[paramDst]), &pending); err != nil {
 		return fmt.Errorf("创建任务参数解析失败: %w", err)
@@ -446,7 +441,7 @@ func (s *service) onCreated(ctx context.Context, task *entity.Task) error {
 }
 
 // onUpdated 配置写入成功后更新存档；所有字段都按写入服务器的值保存
-func (s *service) onUpdated(ctx context.Context, task *entity.Task) error {
+func (s *service) onUpdated(ctx context.Context, task *entity.Task, _ protocol.Result) error {
 	var pending pendingDst
 	if err := json.Unmarshal([]byte(task.Params[paramDst]), &pending); err != nil {
 		return fmt.Errorf("更新任务参数解析失败: %w", err)
@@ -468,13 +463,32 @@ func (s *service) onUpdated(ctx context.Context, task *entity.Task) error {
 
 // statusUpdater 返回启动、停止成功后的处理：把存档改为指定状态；重复执行结果一致
 func (s *service) statusUpdater(status int) agentcommand.SucceededHandler {
-	return func(ctx context.Context, task *entity.Task) error {
+	return func(ctx context.Context, task *entity.Task, _ protocol.Result) error {
 		if err := s.dstRepo.UpdateStatus(ctx, task.UserID, task.ResourceID, status); err != nil {
 			return err
 		}
 		slog.InfoContext(ctx, "存档状态已更新", "dstID", task.ResourceID, "status", status, "taskID", task.ID)
 		return nil
 	}
+}
+
+// onStatusChecked 按 dst.sh status 的退出码更新存档状态，纠正进程意外退出或在服务器上手动启停造成的偏差
+func (s *service) onStatusChecked(ctx context.Context, task *entity.Task, result protocol.Result) error {
+	status := entity.DstStatusStopped
+	if result.ExitCode == exitCodeRunning {
+		status = entity.DstStatusRunning
+	}
+	return s.statusUpdater(status)(ctx, task, result)
+}
+
+// onDeleted 服务器上的存档清理成功后删除记录；记录已不存在（如已只删除记录）时视为成功
+func (s *service) onDeleted(ctx context.Context, task *entity.Task, _ protocol.Result) error {
+	err := s.dstRepo.Delete(ctx, task.UserID, task.ResourceID)
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+		return err
+	}
+	slog.InfoContext(ctx, "存档删除完成", "userID", task.UserID, "dstID", task.ResourceID, "taskID", task.ID)
+	return nil
 }
 
 func (p pendingDst) toEntity(userID uint64) *entity.Dst {

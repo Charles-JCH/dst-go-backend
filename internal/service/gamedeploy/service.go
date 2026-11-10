@@ -83,7 +83,7 @@ func (s *service) Deploy(ctx context.Context, userID uint64, serverID uint64, re
 }
 
 // onDeployed 部署成功后把游戏加入服务器已部署的游戏环境；重复执行不会重复添加
-func (s *service) onDeployed(ctx context.Context, task *entity.Task) error {
+func (s *service) onDeployed(ctx context.Context, task *entity.Task, _ protocol.Result) error {
 	code := task.Params[paramGameCode]
 	env, err := s.gameEnvRepo.FindByCode(ctx, code)
 	if err != nil {
