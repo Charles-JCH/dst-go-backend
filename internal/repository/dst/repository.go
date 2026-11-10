@@ -13,6 +13,7 @@ type Repository interface {
 	GetByID(ctx context.Context, userID uint64, dstID uint64) (*entity.Dst, error)
 	List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error)
 	Update(ctx context.Context, userID uint64, dstID uint64, fields UpdateFields) error
+	UpdateStatus(ctx context.Context, userID uint64, dstID uint64, status int) error
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
@@ -96,6 +97,28 @@ func (r *repository) Update(ctx context.Context, userID uint64, dstID uint64, fi
 	if result.RowsAffected > 0 {
 		return nil
 	}
+	dst, err := r.GetByID(ctx, userID, dstID)
+	if err != nil {
+		return err
+	}
+	if dst == nil {
+		return repo.ErrNotFound
+	}
+	return nil
+}
+
+func (r *repository) UpdateStatus(ctx context.Context, userID uint64, dstID uint64, status int) error {
+	result := r.getDB(ctx).
+		Model(&entity.Dst{}).
+		Where("id = ? AND user_id = ?", dstID, userID).
+		Update("status", status)
+	if result.Error != nil {
+		return repo.WrapError(result.Error)
+	}
+	if result.RowsAffected > 0 {
+		return nil
+	}
+	// 状态未变化时影响行数为 0，需确认记录是否存在
 	dst, err := r.GetByID(ctx, userID, dstID)
 	if err != nil {
 		return err

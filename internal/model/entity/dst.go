@@ -1,5 +1,11 @@
 package entity
 
+// 存档运行状态
+const (
+	DstStatusStopped = 0
+	DstStatusRunning = 1
+)
+
 type Dst struct {
 	BaseModel
 	Slot         int      `gorm:"type:int;not null;default:1;uniqueIndex:uk_dst_server_slot,priority:2;comment:存档槽位" json:"slot"`

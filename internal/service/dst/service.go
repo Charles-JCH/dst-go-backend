@@ -45,7 +45,12 @@ type Service interface {
 	Create(ctx context.Context, userID uint64, req *request.CreateDstReq) (*response.TaskResp, error)
 	GetByID(ctx context.Context, userID uint64, dstID uint64) (*response.DstResp, error)
 	List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error)
-	Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) error
+	// Update 下发配置写入任务，返回任务；写入成功后才更新存档，存档运行中时重启后生效
+	Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) (*response.TaskResp, error)
+	// Start 下发启动任务，返回任务；成功后存档标记为运行中。重复启动时脚本直接成功
+	Start(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
+	// Stop 下发停止任务，返回任务；成功后存档标记为已停止。存档未运行时脚本直接成功
+	Stop(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
@@ -70,7 +75,7 @@ type service struct {
 	commands   agentcommand.Service
 }
 
-// NewService 同时向 commands 注册创建任务成功后的处理
+// NewService 同时向 commands 注册创建、更新任务成功后的处理
 func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, taskRepo taskrepo.Repository, txManager repository.Transaction, encryptor crypto.Encryptor, commands agentcommand.Service) Service {
 	s := &service{
 		dstRepo:    dstRepo,
@@ -81,6 +86,9 @@ func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, ta
 		commands:   commands,
 	}
 	commands.OnSucceeded(entity.TaskTypeDstCreate, s.onCreated)
+	commands.OnSucceeded(entity.TaskTypeDstUpdate, s.onUpdated)
+	commands.OnSucceeded(entity.TaskTypeDstStart, s.statusUpdater(entity.DstStatusRunning))
+	commands.OnSucceeded(entity.TaskTypeDstStop, s.statusUpdater(entity.DstStatusStopped))
 	return s
 }
 
@@ -166,33 +174,14 @@ func (s *service) Create(ctx context.Context, userID uint64, req *request.Create
 		ClusterToken: encryptedToken,
 		Mods:         mods,
 	}
-	serverMods := slices.Clone(mods)
-	for _, d := range existing {
-		serverMods = append(serverMods, d.Mods...)
-	}
-	files, err := renderConfig(pending.toEntity(userID), token, serverMods)
-	if err != nil {
-		slog.ErrorContext(ctx, "存档配置生成失败", "serverID", serverID, "slot", slot, "error", err)
-		return nil, apperr.NewBizError(500, "存档创建失败")
-	}
-	params, err := json.Marshal(pending)
-	if err != nil {
-		slog.ErrorContext(ctx, "存档参数序列化失败", "serverID", serverID, "slot", slot, "error", err)
-		return nil, apperr.NewBizError(500, "存档创建失败")
-	}
-
-	task, err := s.commands.Dispatch(ctx, agentcommand.Command{
-		UserID:       userID,
-		ServerID:     serverID,
+	task, err := s.dispatchConfig(ctx, userID, agentcommand.Command{
 		TaskType:     entity.TaskTypeDstCreate,
 		TaskName:     fmt.Sprintf("创建存档（槽位 %d）", slot),
 		ResourceType: entity.TaskResourceServer,
 		ResourceID:   serverID,
-		Params:       map[string]string{paramDst: string(params)},
-		Payload:      protocol.CmdPayload{Action: protocol.ActionConfig, Slot: slot, Files: files},
-	})
+	}, pending, token, existing)
 	if err != nil {
-		return nil, err // 已是 BizError
+		return nil, err
 	}
 	slog.InfoContext(ctx, "存档创建任务已创建", "userID", userID, "serverID", serverID, "slot", slot, "taskID", task.ID)
 	return response.ToTaskResp(task), nil
@@ -241,42 +230,76 @@ func (s *service) List(ctx context.Context, userID uint64, req *request.ListDstR
 	}, nil
 }
 
-func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) error {
+func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) (*response.TaskResp, error) {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		return apperr.NewBizError(400, "存档名称为空")
+		return nil, apperr.NewBizError(400, "存档名称为空")
 	}
 
-	fields := dstrepo.UpdateFields{
-		Name:        name,
-		Description: req.Description,
-		MaxPlayers:  req.MaxPlayers,
-		Mods:        req.Mods,
-		Password:    req.Password,
+	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "存档更新失败")
 	}
-	// 令牌为 nil 表示不修改
+	if dst == nil {
+		return nil, apperr.NewBizError(404, "存档不存在")
+	}
+
+	// 令牌为 nil 表示不修改：配置文件仍要写入令牌，解密原令牌
+	encryptedToken, token := dst.ClusterToken, ""
 	if req.ClusterToken != nil {
-		token := strings.TrimSpace(*req.ClusterToken)
+		token = strings.TrimSpace(*req.ClusterToken)
 		if token == "" {
-			return apperr.NewBizError(400, "科雷令牌为空")
+			return nil, apperr.NewBizError(400, "科雷令牌为空")
 		}
-		encrypted, err := s.encryptor.Encrypt(token)
-		if err != nil {
-			slog.ErrorContext(ctx, "科雷令牌加密失败", "userID", userID, "dstID", dstID, "error", err)
-			return apperr.NewBizError(500, "存档更新失败")
-		}
-		fields.ClusterToken = &encrypted
-	}
-
-	err := s.dstRepo.Update(ctx, userID, dstID, fields)
-	if errors.Is(err, repository.ErrNotFound) {
-		return apperr.NewBizError(404, "存档不存在")
+		encryptedToken, err = s.encryptor.Encrypt(token)
+	} else {
+		token, err = s.encryptor.Decrypt(dst.ClusterToken)
 	}
 	if err != nil {
-		slog.ErrorContext(ctx, "存档更新失败", "userID", userID, "dstID", dstID, "error", err)
-		return apperr.NewBizError(500, "存档更新失败")
+		slog.ErrorContext(ctx, "科雷令牌加解密失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "存档更新失败")
 	}
-	return nil
+
+	// 指针字段为 nil 表示不修改，沿用原值；写入配置需要完整的存档信息
+	pending := pendingDst{
+		ServerID:     dst.ServerID,
+		Slot:         dst.Slot,
+		Name:         name,
+		Description:  valueOr(req.Description, dst.Description),
+		Password:     valueOr(req.Password, dst.Password),
+		MaxPlayers:   req.MaxPlayers,
+		ClusterToken: encryptedToken,
+		Mods:         valueOr(req.Mods, dst.Mods),
+	}
+	if pending.Mods == nil {
+		pending.Mods = []string{}
+	}
+	dsts, _, err := s.dstRepo.List(ctx, userID, dst.ServerID, 1, dstSlotCount)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档列表查询失败", "userID", userID, "serverID", dst.ServerID, "error", err)
+		return nil, apperr.NewBizError(500, "存档更新失败")
+	}
+
+	task, err := s.dispatchConfig(ctx, userID, agentcommand.Command{
+		TaskType:     entity.TaskTypeDstUpdate,
+		TaskName:     fmt.Sprintf("更新存档配置（槽位 %d）", dst.Slot),
+		ResourceType: entity.TaskResourceDst,
+		ResourceID:   dstID,
+	}, pending, token, dsts)
+	if err != nil {
+		return nil, err
+	}
+	slog.InfoContext(ctx, "存档更新任务已创建", "userID", userID, "dstID", dstID, "taskID", task.ID)
+	return response.ToTaskResp(task), nil
+}
+
+func (s *service) Start(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error) {
+	return s.dispatchControl(ctx, userID, dstID, protocol.ActionStart, entity.TaskTypeDstStart, "启动存档")
+}
+
+func (s *service) Stop(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error) {
+	return s.dispatchControl(ctx, userID, dstID, protocol.ActionStop, entity.TaskTypeDstStop, "停止存档")
 }
 
 func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error {
@@ -315,6 +338,33 @@ func (s *service) Delete(ctx context.Context, userID uint64, dstID uint64) error
 	return nil
 }
 
+// dispatchControl 下发启动、停止这类只需槽位的命令，任务名形如"启动存档「名称」"
+func (s *service) dispatchControl(ctx context.Context, userID uint64, dstID uint64, action string, taskType string, verb string) (*response.TaskResp, error) {
+	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, verb+"失败")
+	}
+	if dst == nil {
+		return nil, apperr.NewBizError(404, "存档不存在")
+	}
+
+	task, err := s.commands.Dispatch(ctx, agentcommand.Command{
+		UserID:       userID,
+		ServerID:     dst.ServerID,
+		TaskType:     taskType,
+		TaskName:     fmt.Sprintf("%s「%s」", verb, dst.Name),
+		ResourceType: entity.TaskResourceDst,
+		ResourceID:   dstID,
+		Payload:      protocol.CmdPayload{Action: action, Slot: dst.Slot},
+	})
+	if err != nil {
+		return nil, err // 已是 BizError
+	}
+	slog.InfoContext(ctx, "存档命令已下发", "userID", userID, "dstID", dstID, "action", action, "taskID", task.ID)
+	return response.ToTaskResp(task), nil
+}
+
 // checkSlot 校验服务器归属、已部署饥荒且槽位空闲，返回该服务器已有的存档
 func (s *service) checkSlot(ctx context.Context, userID uint64, serverID uint64, slot int) ([]entity.Dst, error) {
 	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
@@ -338,6 +388,33 @@ func (s *service) checkSlot(ctx context.Context, userID uint64, serverID uint64,
 		return nil, apperr.NewBizError(409, "该服务器的存档槽位已被占用")
 	}
 	return dsts, nil
+}
+
+// dispatchConfig 生成存档配置并下发写入任务，cmd 只需填任务信息；任务成功后由注册的处理按 pending 保存。
+// serverDsts 为该服务器已有的存档，与本存档槽位相同的（编辑时即它自己）不计入模组汇总
+func (s *service) dispatchConfig(ctx context.Context, userID uint64, cmd agentcommand.Command, pending pendingDst, token string, serverDsts []entity.Dst) (*entity.Task, error) {
+	serverMods := slices.Clone(pending.Mods)
+	for _, d := range serverDsts {
+		if d.Slot != pending.Slot {
+			serverMods = append(serverMods, d.Mods...)
+		}
+	}
+	files, err := renderConfig(pending.toEntity(userID), token, serverMods)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档配置生成失败", "serverID", pending.ServerID, "slot", pending.Slot, "error", err)
+		return nil, apperr.NewBizError(500, "存档配置生成失败")
+	}
+	params, err := json.Marshal(pending)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档参数序列化失败", "serverID", pending.ServerID, "slot", pending.Slot, "error", err)
+		return nil, apperr.NewBizError(500, "存档配置生成失败")
+	}
+
+	cmd.UserID = userID
+	cmd.ServerID = pending.ServerID
+	cmd.Params = map[string]string{paramDst: string(params)}
+	cmd.Payload = protocol.CmdPayload{Action: protocol.ActionConfig, Slot: pending.Slot, Files: files}
+	return s.commands.Dispatch(ctx, cmd) // 错误已是 BizError
 }
 
 // onCreated 配置写入成功后保存存档。先插入存档再复查服务器：与删除服务器的 NOT EXISTS 条件互斥，
@@ -368,6 +445,38 @@ func (s *service) onCreated(ctx context.Context, task *entity.Task) error {
 	return nil
 }
 
+// onUpdated 配置写入成功后更新存档；所有字段都按写入服务器的值保存
+func (s *service) onUpdated(ctx context.Context, task *entity.Task) error {
+	var pending pendingDst
+	if err := json.Unmarshal([]byte(task.Params[paramDst]), &pending); err != nil {
+		return fmt.Errorf("更新任务参数解析失败: %w", err)
+	}
+	err := s.dstRepo.Update(ctx, task.UserID, task.ResourceID, dstrepo.UpdateFields{
+		Name:         pending.Name,
+		Description:  &pending.Description,
+		MaxPlayers:   pending.MaxPlayers,
+		Mods:         &pending.Mods,
+		Password:     &pending.Password,
+		ClusterToken: &pending.ClusterToken,
+	})
+	if err != nil {
+		return err
+	}
+	slog.InfoContext(ctx, "存档更新完成", "userID", task.UserID, "dstID", task.ResourceID, "taskID", task.ID)
+	return nil
+}
+
+// statusUpdater 返回启动、停止成功后的处理：把存档改为指定状态；重复执行结果一致
+func (s *service) statusUpdater(status int) agentcommand.SucceededHandler {
+	return func(ctx context.Context, task *entity.Task) error {
+		if err := s.dstRepo.UpdateStatus(ctx, task.UserID, task.ResourceID, status); err != nil {
+			return err
+		}
+		slog.InfoContext(ctx, "存档状态已更新", "dstID", task.ResourceID, "status", status, "taskID", task.ID)
+		return nil
+	}
+}
+
 func (p pendingDst) toEntity(userID uint64) *entity.Dst {
 	return &entity.Dst{
 		ServerID:     p.ServerID,
@@ -380,4 +489,12 @@ func (p pendingDst) toEntity(userID uint64) *entity.Dst {
 		ClusterToken: p.ClusterToken,
 		Mods:         p.Mods,
 	}
+}
+
+// valueOr 指针为 nil 时返回默认值
+func valueOr[T any](p *T, def T) T {
+	if p == nil {
+		return def
+	}
+	return *p
 }

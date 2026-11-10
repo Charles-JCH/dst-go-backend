@@ -83,7 +83,7 @@ func (h *Handler) List(c *gin.Context) {
 	result.Success(c, resp)
 }
 
-// Update 更新存档
+// Update 更新存档：返回配置写入任务，写入成功后存档才更新
 // [PUT] /api/v1/dst/:id
 func (h *Handler) Update(c *gin.Context) {
 	dstID, ok := handler.PathID(c, "存档ID")
@@ -97,11 +97,44 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.dstService.Update(c.Request.Context(), c.GetUint64("userID"), dstID, &req); err != nil {
+	resp, err := h.dstService.Update(c.Request.Context(), c.GetUint64("userID"), dstID, &req)
+	if err != nil {
 		result.Fail(c, err)
 		return
 	}
-	result.Success(c, nil)
+	result.Success(c, resp)
+}
+
+// Start 启动存档，返回启动任务
+// [POST] /api/v1/dst/:id/start
+func (h *Handler) Start(c *gin.Context) {
+	dstID, ok := handler.PathID(c, "存档ID")
+	if !ok {
+		return
+	}
+
+	resp, err := h.dstService.Start(c.Request.Context(), c.GetUint64("userID"), dstID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
+// Stop 停止存档，返回停止任务
+// [POST] /api/v1/dst/:id/stop
+func (h *Handler) Stop(c *gin.Context) {
+	dstID, ok := handler.PathID(c, "存档ID")
+	if !ok {
+		return
+	}
+
+	resp, err := h.dstService.Stop(c.Request.Context(), c.GetUint64("userID"), dstID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
 }
 
 // Delete 删除存档
