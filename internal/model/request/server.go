@@ -22,3 +22,7 @@ type ListServerReq struct {
 type DeployGameReq struct {
 	GameCode string `json:"gameCode" binding:"required,max=32"`
 }
+
+type UpdateGameReq struct {
+	GameCode string `json:"gameCode" binding:"required,max=32"`
+}

@@ -36,6 +36,7 @@ func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc
 			serverGroup.POST("/:id/agent/install", h.Server.InstallAgent)
 			serverGroup.GET("/:id/metrics", h.Server.ListMetrics)
 			serverGroup.POST("/:id/deploy", h.Server.DeployGame)
+			serverGroup.POST("/:id/game/update", h.Server.UpdateGame)
 		}
 
 		dstGroup := protected.Group("/dst")

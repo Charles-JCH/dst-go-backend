@@ -18,15 +18,23 @@ import (
 // paramGameCode 部署任务参数：要部署的游戏编码，部署成功后据此记录已部署的游戏
 const paramGameCode = "gameCode"
 
-// deployActions 游戏编码对应的 Agent 部署命令；新增游戏时在这里加一行
-var deployActions = map[string]string{
-	entity.GameCodeDst: protocol.ActionDeploy,
-}
+// 游戏编码对应的 Agent 部署、更新命令；新增游戏时在这里各加一行
+var (
+	deployActions = map[string]string{
+		entity.GameCodeDst: protocol.ActionDeploy,
+	}
+	updateActions = map[string]string{
+		entity.GameCodeDst: protocol.ActionUpdate,
+	}
+)
 
-// Service 通过 Agent 在服务器上部署游戏环境
+// Service 通过 Agent 在服务器上部署和更新游戏环境
 type Service interface {
 	// Deploy 创建部署任务并下发给 Agent，返回任务；进度和日志通过任务查看
 	Deploy(ctx context.Context, userID uint64, serverID uint64, req *request.DeployGameReq) (*response.TaskResp, error)
+	// Update 创建检查更新任务并下发给 Agent，返回任务；已是最新版本时任务直接成功，
+	// 有新版本但存档正在运行时脚本拒绝更新，任务失败并在日志中说明
+	Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateGameReq) (*response.TaskResp, error)
 }
 
 type service struct {
@@ -79,6 +87,42 @@ func (s *service) Deploy(ctx context.Context, userID uint64, serverID uint64, re
 		return nil, err // 已是 BizError
 	}
 	slog.InfoContext(ctx, "游戏部署任务已创建", "userID", userID, "serverID", serverID, "gameCode", env.Code, "taskID", task.ID)
+	return response.ToTaskResp(task), nil
+}
+
+func (s *service) Update(ctx context.Context, userID uint64, serverID uint64, req *request.UpdateGameReq) (*response.TaskResp, error) {
+	server, err := s.serverRepo.GetByID(ctx, userID, serverID)
+	if err != nil {
+		slog.ErrorContext(ctx, "服务器查询失败", "userID", userID, "serverID", serverID, "error", err)
+		return nil, apperr.NewBizError(500, "游戏更新失败")
+	}
+	if server == nil {
+		return nil, apperr.NewBizError(404, "服务器不存在")
+	}
+
+	action, isSupported := updateActions[req.GameCode]
+	if !isSupported {
+		return nil, apperr.NewBizError(400, "不支持更新该游戏")
+	}
+	index := slices.IndexFunc(server.GameEnv, func(e entity.GameEnvRef) bool { return e.Code == req.GameCode })
+	if index < 0 {
+		return nil, apperr.NewBizError(409, "该游戏尚未部署")
+	}
+	env := server.GameEnv[index]
+
+	task, err := s.commands.Dispatch(ctx, agentcommand.Command{
+		UserID:       userID,
+		ServerID:     serverID,
+		TaskType:     entity.TaskTypeGameUpdate,
+		TaskName:     "检查更新" + env.Name,
+		ResourceType: entity.TaskResourceServer,
+		ResourceID:   serverID,
+		Payload:      protocol.CmdPayload{Action: action},
+	})
+	if err != nil {
+		return nil, err // 已是 BizError
+	}
+	slog.InfoContext(ctx, "游戏更新任务已创建", "userID", userID, "serverID", serverID, "gameCode", env.Code, "taskID", task.ID)
 	return response.ToTaskResp(task), nil
 }
 

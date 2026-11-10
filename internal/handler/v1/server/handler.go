@@ -156,3 +156,24 @@ func (h *Handler) DeployGame(c *gin.Context) {
 	}
 	result.Success(c, resp)
 }
+
+// UpdateGame 检查并更新游戏服务端，返回更新任务
+// [POST] /api/v1/server/:id/game/update
+func (h *Handler) UpdateGame(c *gin.Context) {
+	serverID, ok := handler.PathID(c, "服务器ID")
+	if !ok {
+		return
+	}
+	var req request.UpdateGameReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		result.FailWithMsg(c, 400, "请求参数无效")
+		return
+	}
+
+	resp, err := h.deployService.Update(c.Request.Context(), c.GetUint64("userID"), serverID, &req)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
