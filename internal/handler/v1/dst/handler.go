@@ -105,6 +105,50 @@ func (h *Handler) Update(c *gin.Context) {
 	result.Success(c, resp)
 }
 
+// WorldOptions 地面和洞穴可修改的世界设置目录
+// [GET] /api/v1/dst/world-options
+func (h *Handler) WorldOptions(c *gin.Context) {
+	result.Success(c, h.dstService.WorldOptions(c.Request.Context()))
+}
+
+// SaveWorld 保存地面或洞穴的世界设置，只存平台，返回存档
+// [PUT] /api/v1/dst/:id/world
+func (h *Handler) SaveWorld(c *gin.Context) {
+	dstID, ok := handler.PathID(c, "存档ID")
+	if !ok {
+		return
+	}
+
+	var req request.SaveDstWorldReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		result.FailWithMsg(c, 400, "请求参数无效")
+		return
+	}
+
+	resp, err := h.dstService.SaveWorld(c.Request.Context(), c.GetUint64("userID"), dstID, &req)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
+// ApplyWorld 把已保存的世界设置写入服务器，返回配置写入任务
+// [POST] /api/v1/dst/:id/world/apply
+func (h *Handler) ApplyWorld(c *gin.Context) {
+	dstID, ok := handler.PathID(c, "存档ID")
+	if !ok {
+		return
+	}
+
+	resp, err := h.dstService.ApplyWorld(c.Request.Context(), c.GetUint64("userID"), dstID)
+	if err != nil {
+		result.Fail(c, err)
+		return
+	}
+	result.Success(c, resp)
+}
+
 // Start 启动存档，返回启动任务
 // [POST] /api/v1/dst/:id/start
 func (h *Handler) Start(c *gin.Context) {

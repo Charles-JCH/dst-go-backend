@@ -39,3 +39,9 @@ type ListDstReq struct {
 type DeleteDstReq struct {
 	IsRecordOnly bool `form:"recordOnly"`
 }
+
+// SaveDstWorldReq 保存地面（master）或洞穴（caves）的世界设置，键和值必须在世界设置目录中；未传的项按默认值
+type SaveDstWorldReq struct {
+	Shard     string            `json:"shard" binding:"required,oneof=master caves"`
+	Overrides map[string]string `json:"overrides" binding:"max=300"`
+}

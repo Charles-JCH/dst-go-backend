@@ -17,6 +17,7 @@ import (
 	taskrepo "game-panel/internal/repository/task"
 	"game-panel/internal/service/agentcommand"
 	"log/slog"
+	"maps"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,6 +32,9 @@ const (
 	paramClusterToken = "clusterToken"
 	// exitCodeRunning dst.sh status 的退出码：0 为运行中，2 为已停止（两者都算执行成功）
 	exitCodeRunning = 0
+
+	// paramWorld 应用世界设置任务参数：本次写入服务器的地面和洞穴设置（worldOverrides 的 JSON）
+	paramWorld = "world"
 
 	// paramDst 创建任务参数：待保存的存档（pendingDst 的 JSON），配置写入成功后保存
 	paramDst = "dst"
@@ -50,6 +54,13 @@ type Service interface {
 	List(ctx context.Context, userID uint64, req *request.ListDstReq) (*response.DstListResp, error)
 	// Update 下发配置写入任务，返回任务；写入成功后才更新存档，存档运行中时重启后生效
 	Update(ctx context.Context, userID uint64, dstID uint64, req *request.UpdateDstReq) (*response.TaskResp, error)
+	// WorldOptions 地面和洞穴可修改的世界设置目录
+	WorldOptions(ctx context.Context) *response.WorldOptionsResp
+	// SaveWorld 保存地面或洞穴的世界设置，只存平台，标记为未应用；与已保存的相同时不做修改
+	SaveWorld(ctx context.Context, userID uint64, dstID uint64, req *request.SaveDstWorldReq) (*response.DstResp, error)
+	// ApplyWorld 按已保存的设置生成地面和洞穴的 leveldataoverride.lua 并下发写入任务，返回任务；
+	// 写入成功后清除未应用标记。世界生成类设置只在生成新世界时生效，世界选项类重启存档后生效
+	ApplyWorld(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
 	// Start 下发启动任务，返回任务；成功后存档标记为运行中。重复启动时脚本直接成功
 	Start(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error)
 	// Stop 下发停止任务，返回任务；成功后存档标记为已停止。存档未运行时脚本直接成功
@@ -59,6 +70,12 @@ type Service interface {
 	// Delete 默认下发删除任务并返回任务，服务器上的存档清理成功后才删除记录；
 	// IsRecordOnly 只删除平台记录（Agent 长期离线、服务器已不可用时使用），不返回任务
 	Delete(ctx context.Context, userID uint64, dstID uint64, req *request.DeleteDstReq) (*response.TaskResp, error)
+}
+
+// worldOverrides 本次应用的世界设置，作为应用任务的参数
+type worldOverrides struct {
+	Master map[string]string `json:"master"`
+	Caves  map[string]string `json:"caves"`
 }
 
 // pendingDst 待保存的存档，作为创建任务的参数；ClusterToken 为密文
@@ -98,6 +115,7 @@ func NewService(dstRepo dstrepo.Repository, serverRepo serverrepo.Repository, ta
 	commands.OnSucceeded(entity.TaskTypeDstStop, s.statusUpdater(entity.DstStatusStopped))
 	commands.OnSucceeded(entity.TaskTypeDstStatus, s.onStatusChecked)
 	commands.OnSucceeded(entity.TaskTypeDstDelete, s.onDeleted)
+	commands.OnSucceeded(entity.TaskTypeDstWorld, s.onWorldApplied)
 	return s
 }
 
@@ -303,6 +321,94 @@ func (s *service) Update(ctx context.Context, userID uint64, dstID uint64, req *
 	return response.ToTaskResp(task), nil
 }
 
+func (s *service) WorldOptions(_ context.Context) *response.WorldOptionsResp {
+	return &response.WorldOptionsResp{
+		Master: worldCatalog[shardMaster].Options,
+		Caves:  worldCatalog[shardCaves].Options,
+	}
+}
+
+func (s *service) SaveWorld(ctx context.Context, userID uint64, dstID uint64, req *request.SaveDstWorldReq) (*response.DstResp, error) {
+	overrides, err := normalizeOverrides(req.Shard, req.Overrides)
+	if err != nil {
+		return nil, apperr.NewBizError(400, "世界设置无效")
+	}
+
+	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "世界设置保存失败")
+	}
+	if dst == nil {
+		return nil, apperr.NewBizError(404, "存档不存在")
+	}
+
+	current := &dst.MasterOverrides
+	if req.Shard == shardCaves {
+		current = &dst.CavesOverrides
+	}
+	if maps.Equal(*current, overrides) {
+		return response.ToDstResp(dst), nil // 未修改（如重复提交），不改变未应用标记
+	}
+
+	isPending := true
+	fields := dstrepo.WorldFields{IsWorldPending: &isPending}
+	if req.Shard == shardCaves {
+		fields.CavesOverrides = &overrides
+	} else {
+		fields.MasterOverrides = &overrides
+	}
+	if err := s.dstRepo.UpdateWorld(ctx, userID, dstID, fields); err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, apperr.NewBizError(404, "存档不存在")
+		}
+		slog.ErrorContext(ctx, "世界设置保存失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "世界设置保存失败")
+	}
+	*current = overrides
+	dst.IsWorldPending = true
+	slog.InfoContext(ctx, "世界设置已保存", "userID", userID, "dstID", dstID, "shard", req.Shard)
+	return response.ToDstResp(dst), nil
+}
+
+func (s *service) ApplyWorld(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error) {
+	dst, err := s.dstRepo.GetByID(ctx, userID, dstID)
+	if err != nil {
+		slog.ErrorContext(ctx, "存档查询失败", "userID", userID, "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "世界设置应用失败")
+	}
+	if dst == nil {
+		return nil, apperr.NewBizError(404, "存档不存在")
+	}
+
+	files, err := renderWorldFiles(dst.MasterOverrides, dst.CavesOverrides)
+	if err != nil {
+		slog.ErrorContext(ctx, "世界设置生成失败", "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "世界设置应用失败")
+	}
+	params, err := json.Marshal(worldOverrides{Master: dst.MasterOverrides, Caves: dst.CavesOverrides})
+	if err != nil {
+		slog.ErrorContext(ctx, "世界设置参数序列化失败", "dstID", dstID, "error", err)
+		return nil, apperr.NewBizError(500, "世界设置应用失败")
+	}
+
+	task, err := s.commands.Dispatch(ctx, agentcommand.Command{
+		UserID:       userID,
+		ServerID:     dst.ServerID,
+		TaskType:     entity.TaskTypeDstWorld,
+		TaskName:     fmt.Sprintf("应用世界设置「%s」", dst.Name),
+		ResourceType: entity.TaskResourceDst,
+		ResourceID:   dstID,
+		Params:       map[string]string{paramWorld: string(params)},
+		Payload:      protocol.CmdPayload{Action: protocol.ActionConfig, Slot: dst.Slot, Files: files},
+	})
+	if err != nil {
+		return nil, err // 已是 BizError
+	}
+	slog.InfoContext(ctx, "世界设置应用任务已创建", "userID", userID, "dstID", dstID, "taskID", task.ID)
+	return response.ToTaskResp(task), nil
+}
+
 func (s *service) Start(ctx context.Context, userID uint64, dstID uint64) (*response.TaskResp, error) {
 	return s.dispatchControl(ctx, userID, dstID, protocol.ActionStart, entity.TaskTypeDstStart, "启动存档")
 }
@@ -488,6 +594,32 @@ func (s *service) onDeleted(ctx context.Context, task *entity.Task, _ protocol.R
 		return err
 	}
 	slog.InfoContext(ctx, "存档删除完成", "userID", task.UserID, "dstID", task.ResourceID, "taskID", task.ID)
+	return nil
+}
+
+// onWorldApplied 写入服务器成功后清除未应用标记；应用期间又保存了新的设置时保留标记，等待下次应用
+func (s *service) onWorldApplied(ctx context.Context, task *entity.Task, _ protocol.Result) error {
+	var world worldOverrides
+	if err := json.Unmarshal([]byte(task.Params[paramWorld]), &world); err != nil {
+		return fmt.Errorf("世界设置任务参数解析失败: %w", err)
+	}
+	dst, err := s.dstRepo.GetByID(ctx, task.UserID, task.ResourceID)
+	if err != nil {
+		return err
+	}
+	if dst == nil || !dst.IsWorldPending {
+		return nil // 存档已删除，或已经是已应用状态（重复回传）
+	}
+	if !maps.Equal(dst.MasterOverrides, world.Master) || !maps.Equal(dst.CavesOverrides, world.Caves) {
+		slog.InfoContext(ctx, "世界设置应用期间有新的修改，保留未应用标记", "dstID", task.ResourceID, "taskID", task.ID)
+		return nil
+	}
+	isPending := false
+	err = s.dstRepo.UpdateWorld(ctx, task.UserID, task.ResourceID, dstrepo.WorldFields{IsWorldPending: &isPending})
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+		return err
+	}
+	slog.InfoContext(ctx, "世界设置应用完成", "dstID", task.ResourceID, "taskID", task.ID)
 	return nil
 }
 

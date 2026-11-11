@@ -29,6 +29,8 @@ const (
 	FileClusterToken       = "cluster_token.txt"
 	FileMasterModOverrides = "Master/modoverrides.lua"
 	FileCavesModOverrides  = "Caves/modoverrides.lua"
+	FileMasterLevelData    = "Master/leveldataoverride.lua"
+	FileCavesLevelData     = "Caves/leveldataoverride.lua"
 	// FileModsSetup 服务器上所有存档共用的模组下载列表
 	FileModsSetup = "dedicated_server_mods_setup.lua"
 )

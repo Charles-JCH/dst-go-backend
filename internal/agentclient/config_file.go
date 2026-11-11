@@ -48,7 +48,8 @@ func (e *Executor) writeConfig(ctx context.Context, payload protocol.CmdPayload,
 func (e *Executor) configPath(name string, slot int) (string, error) {
 	clusterDir := path.Join(e.cfg.ClusterRoot, fmt.Sprintf("Cluster_%d", slot))
 	switch name {
-	case protocol.FileClusterINI, protocol.FileClusterToken, protocol.FileMasterModOverrides, protocol.FileCavesModOverrides:
+	case protocol.FileClusterINI, protocol.FileClusterToken, protocol.FileMasterModOverrides, protocol.FileCavesModOverrides,
+		protocol.FileMasterLevelData, protocol.FileCavesLevelData:
 		return path.Join(clusterDir, name), nil
 	case protocol.FileModsSetup:
 		return path.Join(e.cfg.ModsDir, name), nil

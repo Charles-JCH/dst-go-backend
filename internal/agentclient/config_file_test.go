@@ -15,6 +15,7 @@ func TestConfigPath(t *testing.T) {
 	}{
 		{protocol.FileClusterINI, "/home/charles/.klei/DoNotStarveTogether/Cluster_2/cluster.ini", true},
 		{protocol.FileMasterModOverrides, "/home/charles/.klei/DoNotStarveTogether/Cluster_2/Master/modoverrides.lua", true},
+		{protocol.FileCavesLevelData, "/home/charles/.klei/DoNotStarveTogether/Cluster_2/Caves/leveldataoverride.lua", true},
 		{protocol.FileModsSetup, "/home/charles/dst/mods/dedicated_server_mods_setup.lua", true},
 		{"../../.ssh/authorized_keys", "", false},
 		{"/etc/passwd", "", false},

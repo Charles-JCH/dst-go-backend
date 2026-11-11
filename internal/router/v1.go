@@ -44,12 +44,15 @@ func registerV1Routes(r *gin.Engine, h Handlers, rateLimit, auth gin.HandlerFunc
 			dstGroup.POST("/init", h.Dst.Init)
 			dstGroup.POST("", h.Dst.Create)
 			dstGroup.GET("", h.Dst.List)
+			dstGroup.GET("/world-options", h.Dst.WorldOptions)
 			dstGroup.GET("/:id", h.Dst.GetByID)
 			dstGroup.PUT("/:id", h.Dst.Update)
 			dstGroup.DELETE("/:id", h.Dst.Delete)
 			dstGroup.POST("/:id/start", h.Dst.Start)
 			dstGroup.POST("/:id/stop", h.Dst.Stop)
 			dstGroup.POST("/:id/status", h.Dst.Status)
+			dstGroup.PUT("/:id/world", h.Dst.SaveWorld)
+			dstGroup.POST("/:id/world/apply", h.Dst.ApplyWorld)
 		}
 
 		taskGroup := protected.Group("/tasks")

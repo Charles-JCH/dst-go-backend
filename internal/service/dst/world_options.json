@@ -1,0 +1,8766 @@
+{
+ "master": {
+  "options": [
+   {
+    "name": "season_start",
+    "label": "起始季节",
+    "category": "worldgen",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "秋"
+     },
+     {
+      "value": "winter",
+      "label": "冬"
+     },
+     {
+      "value": "spring",
+      "label": "春"
+     },
+     {
+      "value": "summer",
+      "label": "夏"
+     },
+     {
+      "value": "autumn|spring",
+      "label": "春或秋"
+     },
+     {
+      "value": "winter|summer",
+      "label": "冬季或夏季"
+     },
+     {
+      "value": "autumn|winter|spring|summer",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "world_size",
+    "label": "世界大小",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "medium",
+    "options": [
+     {
+      "value": "small",
+      "label": "小"
+     },
+     {
+      "value": "medium",
+      "label": "中"
+     },
+     {
+      "value": "default",
+      "label": "大"
+     },
+     {
+      "value": "huge",
+      "label": "巨大"
+     }
+    ]
+   },
+   {
+    "name": "branching",
+    "label": "分支",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "most",
+    "options": [
+     {
+      "value": "never",
+      "label": "从不"
+     },
+     {
+      "value": "least",
+      "label": "最少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "most",
+      "label": "最多"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "loop",
+    "label": "环形",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "always",
+    "options": [
+     {
+      "value": "never",
+      "label": "从不"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "roads",
+    "label": "道路",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "touchstone",
+    "label": "试金石",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "boons",
+    "label": "失败的冒险家",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "prefabswaps_start",
+    "label": "开始资源多样化",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "classic",
+    "options": [
+     {
+      "value": "classic",
+      "label": "经典"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "highly random",
+      "label": "非常随机"
+     }
+    ]
+   },
+   {
+    "name": "balatro",
+    "label": "小丑",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "terrariumchest",
+    "label": "盒中泰拉",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "moon_fissure",
+    "label": "天体裂缝",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "junkyard",
+    "label": "垃圾场",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "stageplays",
+    "label": "舞台剧",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "moon_tree",
+    "label": "月树",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_sapling",
+    "label": "月亮树苗",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "cactus",
+    "label": "仙人掌",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "carrot",
+    "label": "胡萝卜",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "berrybush",
+    "label": "浆果丛",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "mushroom",
+    "label": "蘑菇",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "meteorspawner",
+    "label": "流星区域",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_berrybush",
+    "label": "石果灌木丛",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_rock",
+    "label": "月亮石",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_starfish",
+    "label": "海星",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "rock_ice",
+    "label": "迷你冰川",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "palmconetree",
+    "label": "棕榈松果树",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_hotspring",
+    "label": "温泉",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_bullkelp",
+    "label": "公牛海带",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_bullkelp",
+    "label": "海岸公牛海带",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ponds",
+    "label": "池塘",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_seastack",
+    "label": "海蚀柱",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "ocean_rare",
+    "options": [
+     {
+      "value": "ocean_never",
+      "label": "无"
+     },
+     {
+      "value": "ocean_rare",
+      "label": "很少"
+     },
+     {
+      "value": "ocean_uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "ocean_default",
+      "label": "默认"
+     },
+     {
+      "value": "ocean_often",
+      "label": "较多"
+     },
+     {
+      "value": "ocean_mostly",
+      "label": "很多"
+     },
+     {
+      "value": "ocean_always",
+      "label": "大量"
+     },
+     {
+      "value": "ocean_insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "rock",
+    "label": "巨石",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "trees",
+    "label": "树（所有）",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "grass",
+    "label": "草",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "flint",
+    "label": "燧石",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "sapling",
+    "label": "树苗",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "flowers",
+    "label": "花，邪恶花",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "tumbleweed",
+    "label": "风滚草",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "reeds",
+    "label": "芦苇",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "marshbush",
+    "label": "尖刺灌木",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "catcoon",
+    "label": "空心树桩",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "buzzard",
+    "label": "秃鹫",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "rabbits",
+    "label": "兔洞",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moles",
+    "label": "鼹鼠丘",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "lightninggoat",
+    "label": "伏特羊",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "beefalo",
+    "label": "皮弗娄牛",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "pigs",
+    "label": "猪屋",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_carrot",
+    "label": "胡萝卜鼠",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "bees",
+    "label": "蜜蜂蜂窝",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_wobsterden",
+    "label": "龙虾窝",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_otterdens",
+    "label": "水獭掠夺者窝点",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_shoal",
+    "label": "鱼群",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_fruitdragon",
+    "label": "沙拉蝾螈",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "tentacles",
+    "label": "触手",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "merm",
+    "label": "漏雨的小屋",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "houndmound",
+    "label": "猎犬丘",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "chess",
+    "label": "发条装置",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "ocean_waterplant",
+    "label": "海草",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "ocean_rare",
+    "options": [
+     {
+      "value": "ocean_never",
+      "label": "无"
+     },
+     {
+      "value": "ocean_rare",
+      "label": "很少"
+     },
+     {
+      "value": "ocean_uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "ocean_default",
+      "label": "默认"
+     },
+     {
+      "value": "ocean_often",
+      "label": "较多"
+     },
+     {
+      "value": "ocean_mostly",
+      "label": "很多"
+     },
+     {
+      "value": "ocean_always",
+      "label": "大量"
+     },
+     {
+      "value": "ocean_insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "moon_spiders",
+    "label": "破碎蜘蛛洞",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "walrus",
+    "label": "海象营地",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "often",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "tallbirds",
+    "label": "高脚鸟",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "angrybees",
+    "label": "杀人蜂蜂窝",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "spiders",
+    "label": "蜘蛛巢",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "specialevent",
+    "label": "活动",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "none",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "自动"
+     }
+    ]
+   },
+   {
+    "name": "autumn",
+    "label": "秋",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "noseason",
+      "label": "无"
+     },
+     {
+      "value": "veryshortseason",
+      "label": "极短"
+     },
+     {
+      "value": "shortseason",
+      "label": "短"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "longseason",
+      "label": "长"
+     },
+     {
+      "value": "verylongseason",
+      "label": "极长"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "winter",
+    "label": "冬",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "noseason",
+      "label": "无"
+     },
+     {
+      "value": "veryshortseason",
+      "label": "极短"
+     },
+     {
+      "value": "shortseason",
+      "label": "短"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "longseason",
+      "label": "长"
+     },
+     {
+      "value": "verylongseason",
+      "label": "极长"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "spring",
+    "label": "春",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "noseason",
+      "label": "无"
+     },
+     {
+      "value": "veryshortseason",
+      "label": "极短"
+     },
+     {
+      "value": "shortseason",
+      "label": "短"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "longseason",
+      "label": "长"
+     },
+     {
+      "value": "verylongseason",
+      "label": "极长"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "summer",
+    "label": "夏",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "noseason",
+      "label": "无"
+     },
+     {
+      "value": "veryshortseason",
+      "label": "极短"
+     },
+     {
+      "value": "shortseason",
+      "label": "短"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "longseason",
+      "label": "长"
+     },
+     {
+      "value": "verylongseason",
+      "label": "极长"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "day",
+    "label": "昼夜选项",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "longday",
+      "label": "长白天"
+     },
+     {
+      "value": "longdusk",
+      "label": "长黄昏"
+     },
+     {
+      "value": "longnight",
+      "label": "长夜晚"
+     },
+     {
+      "value": "noday",
+      "label": "无白天"
+     },
+     {
+      "value": "nodusk",
+      "label": "无黄昏"
+     },
+     {
+      "value": "nonight",
+      "label": "无夜晚"
+     },
+     {
+      "value": "onlyday",
+      "label": "仅白天"
+     },
+     {
+      "value": "onlydusk",
+      "label": "仅黄昏"
+     },
+     {
+      "value": "onlynight",
+      "label": "仅夜晚"
+     }
+    ]
+   },
+   {
+    "name": "spawnmode",
+    "label": "出生模式",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "fixed",
+    "options": [
+     {
+      "value": "fixed",
+      "label": "绚丽之门"
+     },
+     {
+      "value": "scatter",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "ghostenabled",
+    "label": "冒险家死亡",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "always",
+    "options": [
+     {
+      "value": "none",
+      "label": "更改冒险家"
+     },
+     {
+      "value": "always",
+      "label": "变鬼魂"
+     }
+    ]
+   },
+   {
+    "name": "portalresurection",
+    "label": "在绚丽之门复活",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "always",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "ghostsanitydrain",
+    "label": "鬼魂理智值惩罚",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "none",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "resettime",
+    "label": "死亡重置倒计时",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "none",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "always",
+      "label": "立刻"
+     }
+    ]
+   },
+   {
+    "name": "beefaloheat",
+    "label": "皮弗娄牛交配频率",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "krampus",
+    "label": "坎普斯",
+    "category": "settings",
+    "group": "global",
+    "groupLabel": "全局",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "crow_carnival",
+    "label": "盛夏鸦年华",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "hallowed_nights",
+    "label": "万圣夜",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "winters_feast",
+    "label": "冬季盛宴",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_gobbler",
+    "label": "火鸡之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_varg",
+    "label": "座狼之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_pig",
+    "label": "猪王之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_carrat",
+    "label": "胡萝卜鼠之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_beefalo",
+    "label": "皮弗娄牛之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_catcoon",
+    "label": "浣猫之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_bunnyman",
+    "label": "兔人之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_dragonfly",
+    "label": "龙蝇之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_snake",
+    "label": "洞穴蠕虫之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "year_of_the_knight",
+    "label": "发条骑士之年",
+    "category": "settings",
+    "group": "events",
+    "groupLabel": "活动",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "enabled",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "extrastartingitems",
+    "label": "额外起始资源",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "0",
+      "label": "总是"
+     },
+     {
+      "value": "5",
+      "label": "第5天后"
+     },
+     {
+      "value": "default",
+      "label": "第10天后"
+     },
+     {
+      "value": "15",
+      "label": "第15天后"
+     },
+     {
+      "value": "20",
+      "label": "第20天后"
+     },
+     {
+      "value": "none",
+      "label": "从不"
+     }
+    ]
+   },
+   {
+    "name": "seasonalstartingitems",
+    "label": "季节起始物品",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "spawnprotection",
+    "label": "防骚扰出生保护",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "自动检测"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "dropeverythingondespawn",
+    "label": "离开游戏后物品掉落",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "always",
+      "label": "所有"
+     }
+    ]
+   },
+   {
+    "name": "healthpenalty",
+    "label": "生命值上限惩罚",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "none",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "lessdamagetaken",
+    "label": "受到的伤害",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "none",
+    "options": [
+     {
+      "value": "always",
+      "label": "较少"
+     },
+     {
+      "value": "none",
+      "label": "默认"
+     },
+     {
+      "value": "more",
+      "label": "较多"
+     }
+    ]
+   },
+   {
+    "name": "temperaturedamage",
+    "label": "温度伤害",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "nonlethal",
+      "label": "非致命"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "hunger",
+    "label": "饥饿伤害",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "nonlethal",
+      "label": "非致命"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "darkness",
+    "label": "黑暗伤害",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "nonlethal",
+      "label": "非致命"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "shadowcreatures",
+    "label": "理智怪兽",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "brightmarecreatures",
+    "label": "启蒙怪兽",
+    "category": "settings",
+    "group": "survivors",
+    "groupLabel": "冒险家",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "hounds",
+    "label": "猎犬袭击",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "winterhounds",
+    "label": "寒冰猎犬群",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "summerhounds",
+    "label": "火焰猎犬群",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "petrification",
+    "label": "森林石化",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "none",
+      "label": "无"
+     },
+     {
+      "value": "few",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "many",
+      "label": "快"
+     },
+     {
+      "value": "max",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "frograin",
+    "label": "青蛙雨",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "lightning",
+    "label": "闪电",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wildfires",
+    "label": "野火",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "hunt",
+    "label": "狩猎",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "meteorshowers",
+    "label": "流星频率",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wanderingtrader_enabled",
+    "label": "流浪商人",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "always",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "weather",
+    "label": "雨",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rifts_enabled",
+    "label": "荒野裂隙",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "自动检测"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "lunarhail_frequency",
+    "label": "月雹",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "alternatehunt",
+    "label": "狩猎惊喜",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rifts_frequency",
+    "label": "荒野裂隙频率",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "regrowth",
+    "label": "再生速度",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "flowers_regrowth",
+    "label": "花",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "reeds_regrowth",
+    "label": "芦苇",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "palmconetree_regrowth",
+    "label": "棕榈松果树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "saltstack_regrowth",
+    "label": "盐堆",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "cactus_regrowth",
+    "label": "仙人掌",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "basicresource_regrowth",
+    "label": "基础资源",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "none",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "moon_tree_regrowth",
+    "label": "月树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "carrots_regrowth",
+    "label": "胡萝卜",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "deciduoustree_regrowth",
+    "label": "桦栗树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "evergreen_regrowth",
+    "label": "常青树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "twiggytrees_regrowth",
+    "label": "多枝树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "monkeytail_portalrate",
+    "label": "猴尾草",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "palmcone_seed_portalrate",
+    "label": "棕榈松果树芽",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "powder_monkey_portalrate",
+    "label": "火药猴",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "lightcrab_portalrate",
+    "label": "发光蟹",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bananabush_portalrate",
+    "label": "香蕉丛",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "portal_spawnrate",
+    "label": "传送频率",
+    "category": "settings",
+    "group": "portal_resources",
+    "groupLabel": "非自然传送门资源",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "penguins",
+    "label": "企鸥",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bees_setting",
+    "label": "蜜蜂",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "catcoons",
+    "label": "浣猫",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "butterfly",
+    "label": "蝴蝶",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "perd",
+    "label": "火鸡",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "birds",
+    "label": "鸟",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rabbits_setting",
+    "label": "兔子",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "gnarwail",
+    "label": "一角鲸",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bunnymen_setting",
+    "label": "兔人",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "grassgekkos",
+    "label": "草壁虎转化",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "moles_setting",
+    "label": "鼹鼠",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "pigs_setting",
+    "label": "猪",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "fishschools",
+    "label": "鱼群",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "otters_setting",
+    "label": "水獭掠夺者",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wobsters",
+    "label": "龙虾",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wasps",
+    "label": "杀人蜂",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "sharks",
+    "label": "鲨鱼",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "lureplants",
+    "label": "食人花",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "hound_mounds",
+    "label": "猎犬",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "mosquitos",
+    "label": "蚊子",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "frogs",
+    "label": "青蛙",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "squid",
+    "label": "鱿鱼",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "cookiecutters",
+    "label": "饼干切割机",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bats_setting",
+    "label": "蝙蝠",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "walrus_setting",
+    "label": "海象",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "often",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spiders_setting",
+    "label": "蜘蛛",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spider_warriors",
+    "label": "蜘蛛战士",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "merms",
+    "label": "鱼人",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "pirateraids",
+    "label": "月亮码头海盗",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "goosemoose",
+    "label": "麋鹿鹅",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "deerclops",
+    "label": "独眼巨鹿",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "liefs",
+    "label": "树精守卫",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "deciduousmonster",
+    "label": "毒桦栗树",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bearger",
+    "label": "熊獾",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "antliontribute",
+    "label": "蚁狮贡品",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "crabking",
+    "label": "帝王蟹",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "dragonfly",
+    "label": "龙蝇",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "malbatross",
+    "label": "邪天翁",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "often",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "daywalker2",
+    "label": "拾荒疯猪",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "beequeen",
+    "label": "蜂王",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "eyeofterror",
+    "label": "恐怖之眼",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "sharkboi",
+    "label": "大霜鲨",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "klaus",
+    "label": "克劳斯",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "often",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "fruitfly",
+    "label": "果蝇王",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spiderqueen",
+    "label": "蜘蛛女王",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "mutated_birds",
+    "label": "变异的鸟",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "moon_spider",
+    "label": "破碎蜘蛛",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "mutated_merm",
+    "label": "变异鱼人",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "penguins_moon",
+    "label": "永冻企鸥",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_spiderqueen",
+    "label": "破碎蜘蛛洞",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_deerclops",
+    "label": "晶体独眼巨鹿",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_buzzard_gestalt",
+    "label": "水晶冠秃鹫",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_bird_gestalt",
+    "label": "亮喙鸟",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_warg",
+    "label": "附身座狼",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_bearger",
+    "label": "装甲熊獾",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_hounds",
+    "label": "恐怖猎犬",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   }
+  ],
+  "fixed": {
+   "has_ocean": "true",
+   "keep_disconnected_tiles": "true",
+   "layout_mode": "\"LinkNodesByKeys\"",
+   "no_joining_islands": "true",
+   "no_wormholes_to_disconnected_tiles": "true",
+   "start_location": "\"default\"",
+   "task_set": "\"default\"",
+   "wormhole_prefab": "\"wormhole\""
+  }
+ },
+ "caves": {
+  "options": [
+   {
+    "name": "world_size",
+    "label": "世界大小",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "medium",
+    "options": [
+     {
+      "value": "small",
+      "label": "小"
+     },
+     {
+      "value": "medium",
+      "label": "中"
+     },
+     {
+      "value": "default",
+      "label": "大"
+     },
+     {
+      "value": "huge",
+      "label": "巨大"
+     }
+    ]
+   },
+   {
+    "name": "branching",
+    "label": "分支",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "从不"
+     },
+     {
+      "value": "least",
+      "label": "最少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "most",
+      "label": "最多"
+     },
+     {
+      "value": "random",
+      "label": "随机"
+     }
+    ]
+   },
+   {
+    "name": "loop",
+    "label": "环形",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "从不"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "touchstone",
+    "label": "试金石",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "boons",
+    "label": "失败的冒险家",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "cavelight",
+    "label": "洞穴光照",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "prefabswaps_start",
+    "label": "开始资源多样化",
+    "category": "worldgen",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "classic",
+    "options": [
+     {
+      "value": "classic",
+      "label": "经典"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "highly random",
+      "label": "非常随机"
+     }
+    ]
+   },
+   {
+    "name": "mushtree",
+    "label": "蘑菇树",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "wormlights",
+    "label": "发光浆果",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "flower_cave",
+    "label": "荧光花",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "fern",
+    "label": "洞穴蕨类",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "cave_ponds",
+    "label": "池塘",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "tree_rock",
+    "label": "巨石枝",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "mushroom",
+    "label": "蘑菇",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "berrybush",
+    "label": "浆果丛",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "banana",
+    "label": "香蕉",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "lichen",
+    "label": "苔藓",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "rock",
+    "label": "巨石",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "trees",
+    "label": "树（所有）",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "grass",
+    "label": "草",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "flint",
+    "label": "燧石",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "sapling",
+    "label": "树苗",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "reeds",
+    "label": "芦苇",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "marshbush",
+    "label": "尖刺灌木",
+    "category": "worldgen",
+    "group": "resources",
+    "groupLabel": "资源",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "slurper",
+    "label": "啜食者",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "slurtles",
+    "label": "蛞蝓龟窝",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "bunnymen",
+    "label": "兔屋",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "monkey",
+    "label": "穴居猴桶",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "rocky",
+    "label": "石虾",
+    "category": "worldgen",
+    "group": "animals",
+    "groupLabel": "生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "tentacles",
+    "label": "触手",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "cave_spiders",
+    "label": "蛛网岩",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "chess",
+    "label": "发条装置",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "fissure",
+    "label": "梦魇裂缝",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "bats",
+    "label": "蝙蝠",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "worms",
+    "label": "洞穴蠕虫",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "uncommon",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "spiders",
+    "label": "蜘蛛巢",
+    "category": "worldgen",
+    "group": "monsters",
+    "groupLabel": "敌对生物以及刷新点",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "uncommon",
+      "label": "较少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "mostly",
+      "label": "很多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     },
+     {
+      "value": "insane",
+      "label": "疯狂"
+     }
+    ]
+   },
+   {
+    "name": "acidrain_enabled",
+    "label": "酸雨",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "always",
+    "options": [
+     {
+      "value": "none",
+      "label": "禁用"
+     },
+     {
+      "value": "always",
+      "label": "启用"
+     }
+    ]
+   },
+   {
+    "name": "earthquakes",
+    "label": "地震",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "rare",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "weather",
+    "label": "雨",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wormattacks",
+    "label": "洞穴蠕虫袭击",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rifts_enabled_cave",
+    "label": "荒野裂隙",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "自动检测"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "atriumgate",
+    "label": "远古大门",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "rifts_frequency_cave",
+    "label": "荒野裂隙频率",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "wormattacks_boss",
+    "label": "大蠕虫",
+    "category": "settings",
+    "group": "misc",
+    "groupLabel": "世界",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "从不"
+     },
+     {
+      "value": "rare",
+      "label": "稀有"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "常见"
+     },
+     {
+      "value": "always",
+      "label": "总是"
+     }
+    ]
+   },
+   {
+    "name": "regrowth",
+    "label": "再生速度",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "twiggytrees_regrowth",
+    "label": "多枝树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "flower_cave_regrowth",
+    "label": "荧光花",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "evergreen_regrowth",
+    "label": "常青树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "reeds_regrowth",
+    "label": "芦苇",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "lightflier_flower_regrowth",
+    "label": "光虫花",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "mushtree_moon_regrowth",
+    "label": "月亮蘑菇树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "tree_rock_regrowth",
+    "label": "巨石枝",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "mushtree_regrowth",
+    "label": "蘑菇树",
+    "category": "settings",
+    "group": "resources",
+    "groupLabel": "资源再生",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "veryslow",
+      "label": "极慢"
+     },
+     {
+      "value": "slow",
+      "label": "慢"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "fast",
+      "label": "快"
+     },
+     {
+      "value": "veryfast",
+      "label": "极快"
+     }
+    ]
+   },
+   {
+    "name": "slurtles_setting",
+    "label": "蛞蝓龟",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "snurtles",
+    "label": "蜗牛龟",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rocky_setting",
+    "label": "石虾",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "dustmoths",
+    "label": "尘蛾",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "lightfliers",
+    "label": "球状光虫",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "monkey_setting",
+    "label": "穴居猴",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "mushgnome",
+    "label": "蘑菇地精",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "grassgekkos",
+    "label": "草壁虎转化",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "never",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "moles_setting",
+    "label": "鼹鼠",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "pigs_setting",
+    "label": "猪",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bunnymen_setting",
+    "label": "兔人",
+    "category": "settings",
+    "group": "animals",
+    "groupLabel": "生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spiders_setting",
+    "label": "蜘蛛",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bat_boss",
+    "label": "猎犬蝙蝠",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "merms",
+    "label": "鱼人",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "bats_setting",
+    "label": "蝙蝠",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "rocky_boss",
+    "label": "岩石大师",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "nightmarecreatures",
+    "label": "遗迹梦魇",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spider_warriors",
+    "label": "蜘蛛战士",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "spider_spitter",
+    "label": "喷射蜘蛛",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "chest_mimics",
+    "label": "暴躁箱子",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "molebats",
+    "label": "裸鼹蝠",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "itemmimics",
+    "label": "拟态蠕虫",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spider_dropper",
+    "label": "穴居悬蛛",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spider_hider",
+    "label": "洞穴蜘蛛",
+    "category": "settings",
+    "group": "monsters",
+    "groupLabel": "敌对生物",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "toadstool",
+    "label": "毒菌蟾蜍",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "liefs",
+    "label": "树精守卫",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "fruitfly",
+    "label": "果蝇王",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "daywalker",
+    "label": "梦魇疯猪",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "spiderqueen",
+    "label": "蜘蛛女王",
+    "category": "settings",
+    "group": "giants",
+    "groupLabel": "巨兽",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   },
+   {
+    "name": "mutated_birds",
+    "label": "变异的鸟",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_merm",
+    "label": "变异鱼人",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "mutated_spiderqueen",
+    "label": "破碎蜘蛛洞",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     }
+    ]
+   },
+   {
+    "name": "moon_spider",
+    "label": "破碎蜘蛛",
+    "category": "settings",
+    "group": "lunar_mutations",
+    "groupLabel": "月亮变异",
+    "default": "default",
+    "options": [
+     {
+      "value": "never",
+      "label": "无"
+     },
+     {
+      "value": "rare",
+      "label": "很少"
+     },
+     {
+      "value": "default",
+      "label": "默认"
+     },
+     {
+      "value": "often",
+      "label": "较多"
+     },
+     {
+      "value": "always",
+      "label": "大量"
+     }
+    ]
+   }
+  ],
+  "fixed": {
+   "basicresource_regrowth": "\"none\"",
+   "beefaloheat": "\"rare\"",
+   "brightmarecreatures": "\"default\"",
+   "crow_carnival": "\"default\"",
+   "darkness": "\"default\"",
+   "day": "\"default\"",
+   "dropeverythingondespawn": "\"default\"",
+   "extrastartingitems": "\"default\"",
+   "ghostenabled": "\"always\"",
+   "ghostsanitydrain": "\"none\"",
+   "hallowed_nights": "\"default\"",
+   "healthpenalty": "\"none\"",
+   "hunger": "\"default\"",
+   "krampus": "\"default\"",
+   "layout_mode": "\"RestrictNodesByKey\"",
+   "lessdamagetaken": "\"none\"",
+   "portalresurection": "\"always\"",
+   "resettime": "\"none\"",
+   "roads": "\"never\"",
+   "season_start": "\"default\"",
+   "seasonalstartingitems": "\"default\"",
+   "shadowcreatures": "\"default\"",
+   "spawnmode": "\"fixed\"",
+   "spawnprotection": "\"default\"",
+   "specialevent": "\"default\"",
+   "start_location": "\"caves\"",
+   "task_set": "\"cave_default\"",
+   "temperaturedamage": "\"default\"",
+   "winters_feast": "\"default\"",
+   "wormhole_prefab": "\"tentacle_pillar\"",
+   "year_of_the_beefalo": "\"default\"",
+   "year_of_the_bunnyman": "\"default\"",
+   "year_of_the_carrat": "\"default\"",
+   "year_of_the_catcoon": "\"default\"",
+   "year_of_the_dragonfly": "\"default\"",
+   "year_of_the_gobbler": "\"default\"",
+   "year_of_the_knight": "\"default\"",
+   "year_of_the_pig": "\"default\"",
+   "year_of_the_snake": "\"default\"",
+   "year_of_the_varg": "\"default\""
+  }
+ }
+}

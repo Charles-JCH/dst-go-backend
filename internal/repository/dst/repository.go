@@ -14,6 +14,7 @@ type Repository interface {
 	List(ctx context.Context, userID uint64, serverID uint64, page int, pageSize int) ([]entity.Dst, int64, error)
 	Update(ctx context.Context, userID uint64, dstID uint64, fields UpdateFields) error
 	UpdateStatus(ctx context.Context, userID uint64, dstID uint64, status int) error
+	UpdateWorld(ctx context.Context, userID uint64, dstID uint64, fields WorldFields) error
 	Delete(ctx context.Context, userID uint64, dstID uint64) error
 }
 
@@ -24,6 +25,13 @@ type UpdateFields struct {
 	Mods         *[]string
 	Password     *string
 	ClusterToken *string
+}
+
+// WorldFields 世界设置的更新字段，nil 表示不修改
+type WorldFields struct {
+	MasterOverrides *map[string]string
+	CavesOverrides  *map[string]string
+	IsWorldPending  *bool
 }
 
 type repository struct {
@@ -119,6 +127,48 @@ func (r *repository) UpdateStatus(ctx context.Context, userID uint64, dstID uint
 		return nil
 	}
 	// 状态未变化时影响行数为 0，需确认记录是否存在
+	dst, err := r.GetByID(ctx, userID, dstID)
+	if err != nil {
+		return err
+	}
+	if dst == nil {
+		return repo.ErrNotFound
+	}
+	return nil
+}
+
+func (r *repository) UpdateWorld(ctx context.Context, userID uint64, dstID uint64, fields WorldFields) error {
+	updates := map[string]any{}
+	for column, overrides := range map[string]*map[string]string{
+		"master_overrides": fields.MasterOverrides,
+		"caves_overrides":  fields.CavesOverrides,
+	} {
+		if overrides == nil {
+			continue
+		}
+		value := *overrides
+		if value == nil {
+			value = map[string]string{}
+		}
+		data, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
+		updates[column] = string(data)
+	}
+	if fields.IsWorldPending != nil {
+		updates["is_world_pending"] = *fields.IsWorldPending
+	}
+	result := r.getDB(ctx).
+		Model(&entity.Dst{}).
+		Where("id = ? AND user_id = ?", dstID, userID).
+		Updates(updates)
+	if result.Error != nil {
+		return repo.WrapError(result.Error)
+	}
+	if result.RowsAffected > 0 {
+		return nil
+	}
 	dst, err := r.GetByID(ctx, userID, dstID)
 	if err != nil {
 		return err

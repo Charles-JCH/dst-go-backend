@@ -16,6 +16,7 @@ const (
 	TaskTypeDstStart     = "dst_start"   // 启动存档，成功后标记为运行中
 	TaskTypeDstStop      = "dst_stop"    // 停止存档，成功后标记为已停止
 	TaskTypeDstStatus    = "dst_status"  // 查看存档运行状态，成功后按实际状态更新
+	TaskTypeDstWorld     = "dst_world"   // 更新地面和洞穴的世界设置：写入配置文件，成功后保存
 
 	TaskResourceServer = "server"
 	TaskResourceDst    = "dst"

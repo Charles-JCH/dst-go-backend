@@ -1,0 +1,49 @@
+return {
+  desc="长期档",
+  hideminimap=false,
+  id="ENDLESS",
+  location="forest",
+  max_playlist_position=999,
+  min_playlist_position=0,
+  name="无尽",
+  numrandom_set_pieces=4,
+  override_level_string=false,
+  overrides={
+{{- range $i, $o := .}}{{if $i}},{{end}}
+    {{$o.Key}}={{$o.Value}}{{end}}
+  },
+  playstyle="endless",
+  random_set_pieces={
+    "Sculptures_2",
+    "Sculptures_3",
+    "Sculptures_4",
+    "Sculptures_5",
+    "Chessy_1",
+    "Chessy_2",
+    "Chessy_3",
+    "Chessy_4",
+    "Chessy_5",
+    "Chessy_6",
+    "Maxwell1",
+    "Maxwell2",
+    "Maxwell3",
+    "Maxwell4",
+    "Maxwell6",
+    "Maxwell7",
+    "Warzone_1",
+    "Warzone_2",
+    "Warzone_3" 
+  },
+  required_prefabs={ "multiplayer_portal" },
+  required_setpieces={ "Sculptures_1", "Maxwell5" },
+  settings_desc="永不结束的饥荒沙盒模式。\
+永远可以在绚丽之门复活。",
+  settings_id="ENDLESS",
+  settings_name="无尽",
+  substitutes={  },
+  version=4,
+  worldgen_desc="永不结束的饥荒沙盒模式。\
+永远可以在绚丽之门复活。",
+  worldgen_id="ENDLESS",
+  worldgen_name="无尽" 
+}
